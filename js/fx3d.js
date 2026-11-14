@@ -54,10 +54,13 @@
     const scene = new THREE.Scene();
     const cam = new THREE.PerspectiveCamera(40, 0.6, 0.1, 200);
     cam.position.set(0, 0, 14);
-    scene.add(new THREE.HemisphereLight(0xdfefff, 0x203048, 1.6));
+    scene.add(new THREE.HemisphereLight(0xf4f8ff, 0x6a5a48, 1.5));   // 地面反光改成暖灰，背光面不會黑到和背景融在一起
     const dl = new THREE.DirectionalLight(0xffffff, 2.2);
     dl.position.set(4, 6, 10);
     scene.add(dl);
+    const fill = new THREE.DirectionalLight(0xfff2dc, 1.1);   // 左後方補光：照亮旋轉到背面的部分
+    fill.position.set(-7, 2, -3);
+    scene.add(fill);
     return { scene, cam, w: 1, h: 1, hh: 14 * Math.tan(20 * Math.PI / 180) };
   }
 
@@ -125,14 +128,15 @@
   })());
   /* 旋轉體（獎盃用）：pts 為 [半徑, 高度] */
   function lathe(pts, segs) {
+    // 頭尾那一圈共用同一組頂點（不另外複製），法向量才會平順；否則接縫處光影斷開，看起來像裂了一道缺口
     const pos = [], idx = [];
-    for (let i = 0; i <= segs; i++) {
+    for (let i = 0; i < segs; i++) {
       const a = i / segs * Math.PI * 2, c = Math.cos(a), s = Math.sin(a);
       for (const [r, y] of pts) pos.push(r * c, y, r * s);
     }
     const n = pts.length;
     for (let i = 0; i < segs; i++) for (let j = 0; j < n - 1; j++) {
-      const a = i * n + j, b = (i + 1) * n + j;
+      const a = i * n + j, b = ((i + 1) % segs) * n + j;
       idx.push(a, b, a + 1, b, b + 1, a + 1);
     }
     const g = new THREE.BufferGeometry();
@@ -505,7 +509,7 @@
     const tierCol = ['#ffcc4d', '#ffcc4d', '#d7dde6', '#d08a4f', '#d08a4f'][o.tier || 0];
     // 不透明＋雙面：杯子外壁與內壁的面朝向相反，單面材質會讓其中一面消失，看起來像缺口；
     // 透明材質也會讓同一個網格前後面排序錯亂。淡出改用縮小，不用透明度。
-    const mat = stdMat(col(tierCol), { side: DS(), transparent: false, emissive: col(tierCol), emissiveIntensity: 0.22 });
+    const mat = stdMat(col(tierCol), { side: DS(), transparent: false, emissive: col(tierCol), emissiveIntensity: 0.38 });
     const baseMat = stdMat(col('#3b2f22'), { transparent: false, emissive: col('#1a120a'), emissiveIntensity: 0.3 });
     const cup = new THREE.Mesh(R.trophy(), mat);
     const hl = new THREE.Mesh(R.handle(), mat), hr = new THREE.Mesh(R.handle(), mat);

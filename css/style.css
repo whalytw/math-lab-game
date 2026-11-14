@@ -680,3 +680,17 @@ img, svg, canvas { -webkit-user-drag: none; }
 @keyframes flip3d { 0% { transform: perspective(700px) rotateX(-95deg); opacity: 0.2; } 60% { transform: perspective(700px) rotateX(12deg); opacity: 1; } 100% { transform: perspective(700px) rotateX(0); } }
 @keyframes rise3d { 0% { transform: perspective(700px) rotateX(80deg) translateY(40%); opacity: 0; } 100% { transform: perspective(700px) rotateX(0) translateY(0); opacity: 1; } }
 @keyframes trStamp3d { 0%, 22% { opacity: 0; transform: perspective(800px) rotateY(-120deg) scale(1.6); } 34% { opacity: 1; transform: perspective(800px) rotateY(12deg) scale(0.95); } 42%, 100% { opacity: 1; transform: perspective(800px) rotateY(0) scale(1); } }
+
+/* ---------- 設定頁：每一欄都可以上下捲動（觸控用手指滑、滑鼠用滾輪） ----------
+   html/body 設了 touch-action:none 防止學生拖動畫面；設定欄是自己的捲動容器，所以單獨允許垂直滑動。 */
+.st-col { overflow-y: auto; overflow-x: hidden; touch-action: pan-y; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(190, 222, 255, 0.45) transparent; }
+.st-col::-webkit-scrollbar { width: 8px; }
+.st-col::-webkit-scrollbar-thumb { background: rgba(190, 222, 255, 0.45); border-radius: 4px; }
+.st-col .seg-b, .st-col .st-btn, .st-col .lv-tg { touch-action: pan-y; }
+/* 較矮的螢幕（例如 Surface 3:2 螢幕、縮放 150～200%）：設定頁排得緊一點 */
+@media (max-height: 1000px) {
+  .ov-settings { font-size: clamp(11px, 1.62vh, 20px); }
+  .st-col { gap: 0.7em; padding: 0.7em 0.9em; }
+  .st-panel { padding: 0.9em 1.2em; gap: 0.7em; height: 96vh; }
+  .seg-b, .st-btn { padding: 0.4em 0.75em; }
+}

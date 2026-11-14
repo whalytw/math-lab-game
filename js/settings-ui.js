@@ -119,7 +119,7 @@
     const ttRow = tt.querySelector('.tt-row');
     ttRow.appendChild(button('觸控測試', () => touchTest.open()));
     ttRow.appendChild(button('華麗特效測試', () => runStress()));
-    ct.appendChild(tt);
+    // 觸控與效能測試放在「課堂管理」欄（該欄空間較多，小螢幕也看得到）
 
     const ca = root.querySelector('.c-admin');
     const est = U.el('div', 'st-row');
@@ -138,6 +138,7 @@
     ['左區', '中區', '右區'].forEach((nm, i) => rbox.appendChild(button(nm, () => { LG.game.zones[i].reset(); flash(`${nm}已回到開始畫面`); }, 'seg-like')));
     rbox.appendChild(button('全部', () => { LG.game.zones.forEach(z => z.reset()); flash('三區都已回到開始畫面'); }, 'seg-like'));
     ca.appendChild(rs);
+    ca.appendChild(tt);
 
     const pn = U.el('div', 'st-row');
     pn.innerHTML = '<div class="st-label">設定頁密碼<small>長按設定鈕後還要輸入 4 位數密碼</small></div><div class="pin-row"><span class="pin-st"></span></div>';
