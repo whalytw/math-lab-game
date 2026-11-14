@@ -64,7 +64,7 @@
       <div class="st-panel">
         <div class="st-head">
           <div class="st-title">教師設定</div>
-          <div class="st-note">設定自動儲存在這台電腦的瀏覽器。遊戲參數從每一區的下一位同學開始生效。</div>
+          <div class="st-note">設定自動儲存在這台電腦的瀏覽器。遊戲參數從每一區的下一位同學開始生效。<span class="st-ver">版本 ${LG.VERSION}</span></div>
           <div class="st-close-wrap"></div>
         </div>
         <div class="st-cols">

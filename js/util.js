@@ -110,6 +110,9 @@ window.LG = window.LG || {};
     return v;
   };
 
+  /* 版本號：設定頁會顯示，用來確認電腦上跑的是不是最新檔案 */
+  LG.VERSION = '2026-11-14e';
+
   U.UNIT_HEX = {
     1: '#6fc3ff', 2: '#a58bff', 3: '#ff7eb8', 4: '#c9e45c', 5: '#ffb547',
     6: '#ff8f73', 7: '#4fe0b0', 8: '#46d9e6', 9: '#e79bff', 10: '#f0e68c'

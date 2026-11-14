@@ -518,7 +518,8 @@
     const c = W(L, o.x, o.y);
     const grp = new THREE.Group(); grp.add(cup, hl, hr, plinth); grp.position.set(c[0], c[1], 1); L.scene.add(grp);
     const cm = basicMat(0xfff1c0, { blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
-    const cone = new THREE.Mesh(R.cone(), cm); cone.position.set(c[0], c[1] + 3.6, 0); L.scene.add(cone);
+    // 光柱放在獎盃後面（z = -3.2），不疊在杯身上；光柱邊緣斜切過杯身時會像缺口
+    const cone = new THREE.Mesh(R.cone(), cm); cone.position.set(c[0], c[1] + 3.6, -3.2); L.scene.add(cone);
     const sp = sparkles(L, c[0], c[1], 1.7, 70, tierCol);
     return {
       dur: 4.6, weight: 2,

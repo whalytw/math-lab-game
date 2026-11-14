@@ -694,3 +694,4 @@ img, svg, canvas { -webkit-user-drag: none; }
   .st-panel { padding: 0.9em 1.2em; gap: 0.7em; height: 96vh; }
   .seg-b, .st-btn { padding: 0.4em 0.75em; }
 }
+.st-ver { margin-left: 1em; padding: 0.1em 0.6em; border-radius: 99px; border: 1px solid var(--line); font-size: 0.85em; color: var(--paper-dim); white-space: nowrap; }
