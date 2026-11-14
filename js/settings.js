@@ -15,7 +15,7 @@
     tapTol: 'mid',        // 點擊容錯範圍
     palm: 'normal',       // 手掌誤觸過濾
     renderScale: 1,       // 畫面解析度比例
-    theme: 'tech',        // 介面風格：tech 科技、ink 水墨
+    theme: 'tech',        // 介面風格：tech 科技、ink 水墨、pastel 粉彩
     fx: 'rich',           // 特效：rich 華麗（預設）、full 完整、lite 精簡
     fxVer: 3,             // 設定版本：預設值改過時，舊版存的「舊預設值」會在第一次載入時改成新預設值（見 S.load）
     volume: 0.7,          // 音量
@@ -35,7 +35,7 @@
     tapTol: v => ['small', 'mid', 'large'].includes(v),
     palm: v => ['off', 'normal', 'strict'].includes(v),
     renderScale: v => [1, 0.75, 0.5].includes(v),
-    theme: v => ['tech', 'ink'].includes(v),
+    theme: v => ['tech', 'ink', 'pastel'].includes(v),
     fx: v => ['rich', 'full', 'lite'].includes(v),
     fxVer: v => Number.isInteger(v),
     volume: v => [0, 0.35, 0.7, 1].includes(v),

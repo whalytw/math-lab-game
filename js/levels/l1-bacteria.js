@@ -34,7 +34,7 @@
       const [xn, xd] = e.x, xs = fr(xn, xd);
       return {
         key: `p${e.ai}_${xn}_${xd}`, type: 'point', ai: e.ai, a: val(a), x: xn / xd, y: e.y, xs,
-        prompt: `拖動底數 $a$，讓菌落沿著 $y=a^{x}$ 長到發光的目標點 $\\left(${xs},\\,${e.y}\\right)$。`,
+        prompt: `拖動底數 $a$，讓菌落沿著 $y=a^{x}$ 長到目標點 $\\left(${xs},\\,${e.y}\\right)$。`,
         hint: hintFor(xn, xd, e.y),
         explain: `$${aPow(a, xs)}=${e.y}$，所以 $a=${aTex(a)}$`
       };

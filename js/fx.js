@@ -53,7 +53,7 @@
           drag: o.drag == null ? 1.4 : o.drag,
           shape: o.shape || 'dot',
           rot: U.rand(0, 6.28), vr: U.rand(-9, 9),
-          glow: o.shape !== 'rect' && o.shape !== 'petal'
+          glow: o.shape !== 'rect' && o.shape !== 'petal' && o.shape !== 'star'
         });
       }
     }
@@ -63,7 +63,7 @@
       // 華麗特效時，慶祝改由 3D 特效處理（zone.js 在 3D 忙不過來時會帶 force 呼叫 2D 版）
       if (!o.force && LG.settings.data.fx === 'rich' && LG.fx3d && LG.fx3d.enabled()) return;
       this.burst(x, y, Object.assign({
-        n: 46, shape: LG.theme.brush ? 'petal' : 'rect', angle: -Math.PI / 2, spread: 1.15, keep: true,
+        n: 46, shape: LG.theme.confetti || 'rect', angle: -Math.PI / 2, spread: 1.15, keep: true,
         speed: [260, 720], life: [1.0, 1.8], size: [6, 12], gravity: 900, drag: 1.2,
         colors: LG.TC('confetti')
       }, o));
@@ -78,7 +78,7 @@
         this.flies.push({
           ax: a.x + U.rand(-a.w * 0.25, a.w * 0.25), ay: a.y + U.rand(-a.h * 0.2, a.h * 0.2),
           cx: (a.x + b.x) / 2 + U.rand(-0.18, 0.18) * this.w, cy: Math.max(a.y, b.y) + U.rand(0.06, 0.2) * this.h,
-          bx: b.x, by: b.y, t: -i * 0.05, dur: 0.62, i, group, color: '#ffd34d'
+          bx: b.x, by: b.y, t: -i * 0.05, dur: 0.62, i, group, color: LG.TC('fly')
         });
       }
     }
@@ -123,6 +123,16 @@
           g.quadraticCurveTo(0, -p.size * 0.55, p.size * 0.55, 0);
           g.quadraticCurveTo(0, p.size * 0.55, -p.size * 0.55, 0);
           g.fill();
+          g.restore();
+        } else if (p.shape === 'star') {
+          // 粉彩風格：胖胖的五角星，翻轉時寬度變化
+          g.globalCompositeOperation = 'source-over';
+          g.save(); g.translate(p.x, p.y); g.rotate(p.rot);
+          g.scale(0.4 + 0.6 * Math.abs(Math.cos(p.rot * 1.1)), 1);
+          const R1 = p.size * 0.62, R2 = R1 * 0.5;
+          g.beginPath();
+          for (let j = 0; j < 10; j++) { const a = -Math.PI / 2 + j * Math.PI / 5, r = j % 2 ? R2 : R1; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+          g.closePath(); g.lineJoin = 'round'; g.lineWidth = p.size * 0.18; g.strokeStyle = p.color; g.fill(); g.stroke();
           g.restore();
         } else {
           g.globalCompositeOperation = LG.theme.blend;

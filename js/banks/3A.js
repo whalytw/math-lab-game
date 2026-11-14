@@ -326,11 +326,11 @@
     ];
   };
   add(8, 'tune', [
-    K({ prompt: '調整 $x$、$y$，讓 $x\\vec a+y\\vec b$（白色箭頭）和虛線箭頭 $\\vec c=(3,1)$ 重合；$\\vec a=(1,1)$、$\\vec b=(1,-1)$', win: VWIN,
+    K({ prompt: '調整 $x$、$y$，讓 $x\\vec a+y\\vec b$（實線箭頭）和虛線箭頭 $\\vec c=(3,1)$ 重合；$\\vec a=(1,1)$、$\\vec b=(1,-1)$', win: VWIN,
       params: [{ n: 'x', vals: [-1, 0, 1, 2, 3] }, { n: 'y', vals: [-1, 0, 1, 2, 3] }], ans: [3, 2],
       plot: combo([1, 1], [1, -1]), target: [{ vec: [0, 0, 3, 1] }],
       hint: '$x(1,1)+y(1,-1)=(x+y,\\ x-y)=(3,1)$', explain: '$x+y=3$、$x-y=1$，得 $x=2$、$y=1$' }),
-    K({ prompt: '調整 $x$、$y$，讓 $x\\vec a+y\\vec b$（白色箭頭）和虛線箭頭 $\\vec c=(4,5)$ 重合；$\\vec a=(2,1)$、$\\vec b=(0,1)$', win: VWIN,
+    K({ prompt: '調整 $x$、$y$，讓 $x\\vec a+y\\vec b$（實線箭頭）和虛線箭頭 $\\vec c=(4,5)$ 重合；$\\vec a=(2,1)$、$\\vec b=(0,1)$', win: VWIN,
       params: [{ n: 'x', vals: [-1, 0, 1, 2, 3] }, { n: 'y', vals: [-1, 0, 1, 2, 3, 4] }], ans: [3, 4],
       plot: combo([2, 1], [0, 1]), target: [{ vec: [0, 0, 4, 5] }],
       hint: '$x(2,1)+y(0,1)=(2x,\\ x+y)=(4,5)$', explain: '$2x=4$ 得 $x=2$，$x+y=5$ 得 $y=3$' })

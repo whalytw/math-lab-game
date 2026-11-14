@@ -1,6 +1,7 @@
 /* 數學實驗室 — 介面風格（主題）
    題庫、玩法都不變，只換外觀：顏色、字型、背景（CSS：css/theme-*.css）＋畫布與 3D 用的顏色、筆觸、特效（這裡）。
-   各程式用 LG.TC('鍵名') 取顏色，用 LG.theme.brush 判斷是否用毛筆筆觸。
+   各程式用 LG.TC('鍵名') 取顏色，用 LG.theme.brush 判斷是否用毛筆筆觸，
+   用 LG.theme.light 判斷是否為淺色底（淺色底不用加法發光，否則光點會變成白色看不見）。
    新增風格：在 THEMES 加一組設定、寫一份 css/theme-xxx.css，設定頁就會多一個選項。 */
 'use strict';
 (function (LG) {
@@ -56,8 +57,34 @@
         sky2d: ['#f3ead8', '#e6dbc2'], gold2d: '#b8322a', glass2d: '#3a3530', fw2d: ['#b8322a', '#d76a77', '#221d18'],
         dominos2d: ['#2c2622', '#b8322a', '#5a4e44', '#f4ecda'], line2d: 'rgba(70,55,40,.35)'
       }
+    },
+    pastel: {
+      id: 'pastel', label: '粉彩', brush: false, light: true, blend: 'source-over', confetti: 'star',
+      // 糖果色：在淺色底上仍要看得清楚，所以比一般粉彩略深
+      units: { 1: '#ef6f8e', 2: '#5b9bd5', 3: '#3fae8f', 4: '#f08c4a', 5: '#e29a1e', 6: '#9b72d6', 7: '#2aa3b5', 8: '#d063ad', 9: '#6f86d9', 10: '#6fae3a' },
+      titles: [[0.8, '數學小天才', '🌟'], [0.6, '數學達人', '🎀'], [0.4, '數學小幫手', '🍭'], [0.2, '數學新芽', '🌱'], [0, '數學小萌新', '🐣']],
+      c: {
+        fg: '#4a3f5c', ok: '#2fa36f', bad: '#ec5a7a', warn: '#e8a020',
+        panel: 'rgba(255, 255, 255, 0.78)', grid: 'rgba(155, 114, 214, 0.12)', axis: 'rgba(74, 63, 92, 0.75)',
+        tick: 'rgba(90, 78, 110, 0.85)', axisName: 'rgba(74, 63, 92, 0.9)',
+        trAxis: 'rgba(120, 100, 150, 0.55)', tip: '#ffffff',
+        wires: ['#ef6f8e', '#5b9bd5', '#e8a020', '#3fae8f'], trail: '239, 111, 142',
+        burst: ['#ffb3c7', '#a8d8ff', '#b8f0d0', '#ffe28a', '#d7c2ff'], confetti: ['#ff9eb8', '#8fcbff', '#9be6c1', '#ffd66e', '#c7a8ff', '#ffb38a'],
+        fly: '#ff8fb1', flyHead: '#ffffff',
+        portal: '#c7a8ff', portal2: '#ffd1e3', ref: 'rgba(74,63,92,0.6)', halo: 'rgba(155,114,214,0.16)',
+        touch: 'rgba(239, 111, 142, 0.3)'
+      },
+      dom: {
+        bg: 0xfde9f1, fogNear: 18, fogFar: 60, hemiSky: 0xffffff, hemiGround: 0xc9b6e6, hemi: 1.7,
+        ground: '#f7e1ee', groundLine: 'rgba(155, 114, 214, 0.12)', groundLine2: 'rgba(155, 114, 214, 0.32)',
+        stars: false, glass: 0x8fcbe8, glassEm: 0x2a5a70, gold: 0xf28fb3, edge: 0x7a6a98,
+        dominos: [0xff9eb8, 0x8fcbff, 0x9be6c1, 0xffd66e], fireworks: [0xff9eb8, 0x8fcbff, 0xffd66e],
+        sky2d: ['#fde9f1', '#e8e0ff'], gold2d: '#f28fb3', glass2d: '#8fcbe8', fw2d: ['#ff9eb8', '#8fcbff', '#ffd66e'],
+        dominos2d: ['#ff9eb8', '#8fcbff', '#9be6c1', '#ffd66e'], line2d: 'rgba(155,114,214,.35)'
+      }
     }
   };
+  THEMES.ink.light = true; THEMES.ink.confetti = 'petal'; THEMES.tech.confetti = 'rect';
   LG.THEMES = THEMES;
   LG.theme = THEMES.tech;
   LG.TC = k => LG.theme.c[k];

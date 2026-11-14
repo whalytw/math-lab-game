@@ -1,0 +1,195 @@
+/* 數學實驗室 — 粉彩風格
+   只在 <body class="theme-pastel"> 時生效；顏色變數只套在 #app（遊戲畫面），教師設定頁等疊加層維持原樣。
+   奶油粉底＋柔和色塊、白色圓角卡片、糖果色立體按鈕；不用外部圖片（背景用 CSS 漸層與 SVG 產生）。 */
+
+.theme-pastel #app {
+  --ink: #fff4f7;            /* 底色：奶油粉 */
+  --ink-deep: #fbe6ef;
+  --ink-card: #ffffff;
+  --paper: #4a3f5c;          /* 文字：深紫灰 */
+  --paper-dim: #8a7fa0;
+  --line: rgba(155, 114, 214, 0.32);
+  --grid-a: rgba(155, 114, 214, 0.08);
+  --grid-b: transparent;
+  --ok: #2fa36f;
+  --bad: #ec5a7a;
+  --warn: #e8a020;
+  --pink: #ff8fb1;
+  --pink-deep: #e5638c;
+  --lilac: #b49af0;
+  --mint: #7fdcb6;
+  --sky: #8fcbff;
+  --font-ui: "Microsoft JhengHei", "微軟正黑體", "Noto Sans TC", "PingFang TC", sans-serif;
+  --clouds: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 120' preserveAspectRatio='none'><path d='M0 120 L0 82 C20 62 48 62 62 76 C72 52 108 50 118 74 C132 60 156 64 160 80 C178 66 206 70 210 86 C226 66 262 64 270 84 C286 70 312 72 318 88 C336 72 364 74 372 90 C384 82 396 84 400 88 L400 120 Z' fill='rgba(255,255,255,0.75)'/><path d='M0 120 L0 100 C30 88 60 96 84 104 C110 90 150 92 170 104 C200 92 236 94 256 106 C286 94 324 96 346 106 C366 98 388 100 400 104 L400 120 Z' fill='rgba(214,198,255,0.35)'/></svg>");
+  --dots: radial-gradient(circle, rgba(255, 255, 255, 0.85) 1.6px, transparent 2.2px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--font-ui);
+}
+.theme-pastel { background: #f4dbe8; }
+
+/* ---------- 教師列：粉紫漸層 ---------- */
+.theme-pastel #teacher-bar { background: linear-gradient(90deg, #f7a8c4, #c8b2f2 55%, #9fd3f2); color: #ffffff; border-bottom: 0; box-shadow: 0 2px 10px rgba(155, 114, 214, 0.3); }
+.theme-pastel .tb-brand .nm { text-shadow: 0 1px 2px rgba(120, 70, 140, 0.35); }
+.theme-pastel .tb-brand .sub, .theme-pastel .tb-info, .theme-pastel .tb-btn small { color: rgba(255, 255, 255, 0.92); }
+.theme-pastel .tb-btn { border-color: rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.22); color: #ffffff; border-radius: 999px; }
+.theme-pastel .tb-logo .l1 { stroke: rgba(255, 255, 255, 0.75); }
+
+/* ---------- 遊戲區：柔和色塊＋小白點＋雲朵 ---------- */
+.theme-pastel #zones { background: #f4dbe8; }
+.theme-pastel .zone-inner {
+  border: 0; border-radius: 1.6cqw;
+  background-color: var(--ink);
+  background-image:
+    var(--clouds),
+    var(--dots),
+    radial-gradient(ellipse at 12% 8%, rgba(255, 179, 199, 0.55), transparent 42%),
+    radial-gradient(ellipse at 92% 22%, rgba(180, 154, 240, 0.40), transparent 46%),
+    radial-gradient(ellipse at 30% 78%, rgba(143, 203, 255, 0.35), transparent 46%),
+    radial-gradient(ellipse at 85% 85%, rgba(127, 220, 182, 0.35), transparent 44%);
+  background-size: 100% 20cqh, 2.6cqw 2.6cqw, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: bottom left, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-repeat: no-repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  box-shadow: 0 0 0 0.35cqw #ffffff, 0 0.8cqw 2.4cqw rgba(155, 114, 214, 0.28);
+}
+
+/* HUD：白色半透明條、圓點進度 */
+.theme-pastel .hud { background: rgba(255, 255, 255, 0.62); border-bottom: 0; box-shadow: 0 0.3cqw 1.2cqw rgba(155, 114, 214, 0.15); }
+.theme-pastel .hud-dots i { border-color: rgba(155, 114, 214, 0.45); }
+.theme-pastel .hud-dots i.cur { border-color: var(--pink-deep); box-shadow: 0 0 0 0.45cqw rgba(255, 143, 177, 0.25); }
+.theme-pastel .hud-bar { background: rgba(155, 114, 214, 0.14); border-radius: 999px; overflow: hidden; }
+.theme-pastel .hud-score { color: var(--pink-deep); }
+
+/* 題目框：白色圓角卡片、單元色左邊條 */
+.theme-pastel .lv-q { background: rgba(255, 255, 255, 0.9); border-left: 0.42em solid var(--uc); border-radius: 0.7em; box-shadow: 0 0.25em 0.9em rgba(155, 114, 214, 0.2); }
+.theme-pastel .unit-chip { border-radius: 999px; background: rgba(255, 255, 255, 0.85); }
+
+/* 提示列 */
+.theme-pastel .lv-hint { border-color: rgba(232, 160, 32, 0.45); background: rgba(255, 255, 255, 0.6); border-radius: 0.7em; }
+.theme-pastel .lv-hint .hi { background: rgba(255, 214, 110, 0.4); color: #a8650a; border-radius: 999px; }
+.theme-pastel .lv-hint.on { background: rgba(255, 236, 170, 0.6); }
+.theme-pastel .lv-hint.on .hi { background: #ffc94d; color: #6b3f00; }
+.theme-pastel .lv-hint.answer { background: rgba(127, 220, 182, 0.22); }
+.theme-pastel .lv-hint.answer .hi { background: var(--ok); color: #ffffff; }
+
+/* ---------- 按鈕：糖果色、圓、有厚度 ---------- */
+.theme-pastel .btn { border-radius: 999px; }
+.theme-pastel .btn-go {
+  background: linear-gradient(#ffa3c0, #f2759c); color: #ffffff; text-shadow: 0 1px 2px rgba(160, 40, 90, 0.35);
+  box-shadow: inset 0 0.18em 0 rgba(255, 255, 255, 0.45), 0 0.28em 0 #d4557f, 0 0.5em 1em rgba(229, 99, 140, 0.3);
+}
+.theme-pastel .btn-go.as-label { background: transparent; color: var(--paper-dim); box-shadow: none; border: 2px dashed rgba(155, 114, 214, 0.4); text-shadow: none; }
+.theme-pastel .btn-help {
+  background: linear-gradient(#ffe48f, #ffc94d); color: #7a4a00; border: 0;
+  box-shadow: inset 0 0.16em 0 rgba(255, 255, 255, 0.55), 0 0.24em 0 #e0a420;
+}
+.theme-pastel .btn-help.used { background: rgba(255, 255, 255, 0.5); color: var(--paper-dim); box-shadow: none; }
+.theme-pastel .btn-start, .theme-pastel .btn-next, .theme-pastel .btn-again {
+  background: linear-gradient(#c7b0ff, #9c80ea); color: #ffffff; text-shadow: 0 1px 2px rgba(80, 50, 150, 0.35);
+  box-shadow: inset 0 0.18em 0 rgba(255, 255, 255, 0.45), 0 0.3em 0 #7d62cf, 0 0.55em 1.1em rgba(125, 98, 207, 0.3);
+}
+.theme-pastel .btn-start { animation: pastelBounce 2.4s ease-in-out infinite; }
+@keyframes pastelBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-0.12em) scale(1.02); } }
+.theme-pastel .btn-next .prog, .theme-pastel .btn-again .prog { background: rgba(255, 255, 255, 0.45); }
+
+/* ---------- 卡片類（選項、接線格、閘門、轉盤…）：白色圓角＋柔和陰影 ---------- */
+.theme-pastel .opt, .theme-pastel .sock, .theme-pastel .tf-row, .theme-pastel .w-tag, .theme-pastel .g-tag, .theme-pastel .rs-item {
+  background: rgba(255, 255, 255, 0.94); border-color: rgba(155, 114, 214, 0.28); border-radius: 0.8em;
+  box-shadow: 0 0.2em 0.6em rgba(155, 114, 214, 0.18);
+}
+.theme-pastel .opt.on { background: color-mix(in srgb, var(--uc) 18%, #ffffff); border-color: var(--uc); }
+.theme-pastel .opt.ok, .theme-pastel .tf-row.ok { background: color-mix(in srgb, var(--ok) 16%, #ffffff); box-shadow: 0 0 0 0.14em var(--ok); }
+.theme-pastel .w-tag.ok { box-shadow: 0 0 0 0.14em var(--ok); }
+.theme-pastel .opt.answer, .theme-pastel .w-tag.answer, .theme-pastel .tf-b.answer { animation-name: pastelGlow; }
+@keyframes pastelGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(47, 163, 111, 0.5); } 50% { box-shadow: 0 0 0 0.35em rgba(47, 163, 111, 0.3); } }
+.theme-pastel .tf-b { background: #ffffff; border-color: rgba(155, 114, 214, 0.35); color: var(--paper); border-radius: 999px; }
+.theme-pastel .tf-b.on { background: var(--uc); border-color: var(--uc); color: #ffffff; box-shadow: 0 0.18em 0 rgba(0, 0, 0, 0.12); }
+.theme-pastel .tf-row.hinted { background: rgba(255, 236, 170, 0.55); }
+.theme-pastel .tf-row.wrong { background: rgba(236, 90, 122, 0.1); }
+
+/* 第 1 關：滑桿 */
+.theme-pastel .sl-track { background: rgba(155, 114, 214, 0.22); border-radius: 999px; }
+.theme-pastel .sl-stop::before { background: rgba(155, 114, 214, 0.45); }
+.theme-pastel .sl-knob { box-shadow: 0 0 0 0.6cqw #ffffff, 0 0.3cqw 1cqw 0.6cqw rgba(155, 114, 214, 0.35); }
+.theme-pastel .g-target { box-shadow: none; }
+
+/* 第 2 關：炸彈改成禮物盒 */
+.theme-pastel .bomb .sticks rect { fill: #ff9eb8; stroke: #e5638c; }
+.theme-pastel .bomb .grill { fill: #ffd1e0; }
+.theme-pastel .bomb .box { fill: #ffb3c7; stroke: #ffffff; }
+.theme-pastel .bomb .strap { fill: #b49af0; }
+.theme-pastel .bomb .screen { fill: #4a3f5c; }
+.theme-pastel .w-shadow { stroke: rgba(155, 114, 214, 0.18); }
+.theme-pastel .w-term { fill: #b49af0; }
+
+/* 第 3 關：接線板改成點點紙 */
+.theme-pastel .l3 .board { background-color: rgba(255, 255, 255, 0.6); background-image: radial-gradient(circle at 1px 1px, rgba(155, 114, 214, 0.28) 1.1px, transparent 1.4px); border-color: rgba(155, 114, 214, 0.3); border-radius: 1em; }
+.theme-pastel .plug { background: var(--pink); border-color: #ffffff; box-shadow: 0 0 0 0.2cqw rgba(255, 143, 177, 0.4); }
+.theme-pastel .sock.active, .theme-pastel .sock.hover { border-color: var(--pink-deep); box-shadow: 0 0 0 0.15em rgba(255, 143, 177, 0.4); }
+.theme-pastel .cw.live, .theme-pastel .cw-tip { stroke: var(--pink-deep); fill: var(--pink-deep); }
+.theme-pastel .cw-shadow { stroke: rgba(155, 114, 214, 0.15); }
+.theme-pastel .sock-r .bulb { background: rgba(155, 114, 214, 0.15); }
+.theme-pastel .sock-r.lit .bulb { background: #ffc94d; box-shadow: 0 0 0.6em 0.15em rgba(255, 201, 77, 0.7); }
+
+/* 第 4 關：望遠鏡改成泡泡放大鏡 */
+.theme-pastel .lens {
+  background: radial-gradient(circle at 38% 32%, #ffffff 0%, #eef7ff 45%, #cfe6ff 100%);
+  border-color: #ffffff; box-shadow: 0 0 0 0.6cqw #b49af0, 0 0.6cqw 2cqw rgba(155, 114, 214, 0.35), inset 0 0 2cqw rgba(143, 203, 255, 0.5);
+}
+.theme-pastel .lens .stars { display: none; }
+.theme-pastel .lens .cross::before, .theme-pastel .lens .cross::after { background: rgba(155, 114, 214, 0.25); }
+.theme-pastel .lens-num { text-shadow: none; color: var(--paper); }
+.theme-pastel .dl-btn { background: #ffffff; border-color: rgba(155, 114, 214, 0.35); color: var(--paper); border-radius: 999px; }
+.theme-pastel .dl-win { background: #6a5a8c; border-radius: 0.5em; }
+.theme-pastel .dl-d { color: #ffffff; }
+.theme-pastel .dial.answer .dl-d { color: #ffe48f; }
+
+/* 第 6 關、圖形卡、參數 */
+.theme-pastel .v3d { background: #fdf0f6; border-color: rgba(155, 114, 214, 0.3); border-radius: 1em; }
+.theme-pastel .v3d-tag { background: rgba(255, 255, 255, 0.9); color: var(--paper-dim); border-radius: 999px; }
+.theme-pastel .gc-l { background: var(--lilac); color: #ffffff; border-radius: 999px; }
+.theme-pastel .tn-b { background: #ffffff; border-color: rgba(155, 114, 214, 0.35); color: var(--paper); border-radius: 999px; }
+.theme-pastel .tn-v { background: rgba(255, 255, 255, 0.92); border-color: rgba(155, 114, 214, 0.35); border-radius: 0.6em; }
+.theme-pastel .tn-leg { background: rgba(255, 255, 255, 0.92); border-radius: 0.6em; }
+.theme-pastel .tn-leg i { border-top-color: var(--paper); }
+
+/* ---------- 提示訊息：對話泡泡 ---------- */
+.theme-pastel .toast { background: #ffffff; border-radius: 1em; box-shadow: 0 0.6em 1.6em rgba(155, 114, 214, 0.35); }
+.theme-pastel .float { text-shadow: 0 0.05em 0.25em rgba(255, 255, 255, 0.95); }
+
+/* ---------- 轉場：彩色紙幕 ---------- */
+.theme-pastel .tr-sheet { background-color: #fff4f7; background-image: var(--dots), linear-gradient(135deg, #ffd1e0, #e3d6ff 50%, #cdeaff); background-size: 2.6cqw 2.6cqw, 100% 100%; }
+.theme-pastel .tr-sheet::before, .theme-pastel .tr-sheet::after { height: 1.2cqh; background: repeating-linear-gradient(90deg, #ff9eb8 0 3cqw, #ffd66e 3cqw 6cqw, #9be6c1 6cqw 9cqw, #8fcbff 9cqw 12cqw, #c7a8ff 12cqw 15cqw); }
+.theme-pastel .tr-big, .theme-pastel .tr-name { text-shadow: 0 0.06em 0 #ffffff, 0 0 0.5em rgba(255, 255, 255, 0.9); color: var(--paper); }
+.theme-pastel .tr-unit { background: rgba(255, 255, 255, 0.92); border-radius: 999px; }
+
+/* ---------- 待機畫面 ---------- */
+.theme-pastel .idle-hero .g path { stroke: rgba(155, 114, 214, 0.14); }
+.theme-pastel .idle-hero .ax, .theme-pastel .idle-hero .yx { stroke: rgba(74, 63, 92, 0.5); }
+.theme-pastel .idle-hero .ce, .theme-pastel .idle-hero .cl { stroke-width: 5; }
+.theme-pastel .idle-title { color: var(--pink-deep); text-shadow: 0 0.06em 0 #ffffff, 0 0.12em 0.3em rgba(229, 99, 140, 0.25); letter-spacing: 0.12em; }
+.theme-pastel .idle-rules { border-color: rgba(155, 114, 214, 0.3); background: rgba(255, 255, 255, 0.6); border-radius: 1em; }
+.theme-pastel .idle-rules b { color: var(--pink-deep); }
+
+/* ---------- 總分：彩色徽章 ---------- */
+.theme-pastel .rs-title { color: var(--pink-deep); text-shadow: 0 0.06em 0 #ffffff; }
+.theme-pastel .rs-title .ic {
+  display: inline-grid; place-items: center; width: 1.6em; height: 1.6em; font-size: 0.85em;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #ffe0ec 60%, #ffc2d6); border-radius: 50%;
+  box-shadow: 0 0 0 0.12em #ffffff, 0 0.15em 0.4em rgba(229, 99, 140, 0.35);
+}
+.theme-pastel .rs-score .num { color: var(--pink-deep); }
+
+/* CSS 3D 動畫在粉彩風格中改成彈跳感 */
+.theme-pastel.fx-rich .opt.on { transform: perspective(700px) translateZ(14px) scale(1.02); }
+
+/* 答錯特效：畫面像果凍一樣晃動 */
+.stage.jelly { animation: pastelJelly 0.7s ease-out; }
+@keyframes pastelJelly {
+  0% { transform: scale(1, 1); }
+  20% { transform: scale(1.04, 0.95); }
+  40% { transform: scale(0.97, 1.03); }
+  60% { transform: scale(1.02, 0.98); }
+  80% { transform: scale(0.99, 1.01); }
+  100% { transform: scale(1, 1); }
+}

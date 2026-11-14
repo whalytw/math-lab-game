@@ -51,7 +51,7 @@
     const win = WIN[e.mirrors.join(',')];
     const prompt = two
       ? `曲線 $${ctex(e.src)}$ 先穿過 ① ${MNAME[e.mirrors[0]]}，再穿過 ② ${MNAME[e.mirrors[1]]}，最後變成哪一條？`
-      : `發光曲線 $${ctex(e.src)}$ 穿過「${MNAME[e.mirrors[0]]}」傳送門（鏡射）後，會變成哪一條？`;
+      : `曲線 $${ctex(e.src)}$ 穿過「${MNAME[e.mirrors[0]]}」傳送門（鏡射）後，會變成哪一條？`;
     const hint = [...new Set(e.mirrors)].map(m => MHINT[m]).join('\n');
     const explain = two
       ? `$${ctex(e.src)}$ → ① 得 $${ctex(e.mid)}$ → ② 得 $${ctex(e.opts[0])}$`

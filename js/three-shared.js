@@ -117,7 +117,7 @@
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const mat = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, blending: LG.theme.brush ? 1 : THREE.AdditiveBlending, depthWrite: false, fog: false });
+    const mat = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, blending: LG.theme.light ? 1 : THREE.AdditiveBlending, depthWrite: false, fog: false });
     const points = new THREE.Points(geo, mat);
     points.frustumCulled = false;
     const P = [];
@@ -353,7 +353,7 @@
         g.restore();
         x += h * 0.6; h *= 1.16;
       }
-      g.globalCompositeOperation = 'lighter';
+      g.globalCompositeOperation = LG.theme.blend;
       for (const p of this.parts) { g.globalAlpha = 1 - p.life / p.max; g.fillStyle = p.c; g.beginPath(); g.arc(p.x, p.y, 3, 0, 6.28); g.fill(); }
       g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     }
