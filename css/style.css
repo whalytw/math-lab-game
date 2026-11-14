@@ -639,3 +639,44 @@ img, svg, canvas { -webkit-user-drag: none; }
 }
 .bk-sel option { font-weight: 700; color: #0b1a2c; background: #fff; }
 .u-grid .lv-tg span { white-space: normal; overflow: visible; line-height: 1.25; }
+
+/* ======================================================================
+   華麗特效：3D 畫布、CSS 3D 動畫、效能測試
+   ====================================================================== */
+.fx3d-cv { position: fixed; z-index: 60; pointer-events: none; visibility: hidden; }
+.fx-note { color: #ffb9c0; font-size: 0.85em; }
+.fx-note:empty { display: none; }
+.tt-row .st-btn { flex: 1; }
+.fps-meter { position: fixed; left: 8px; bottom: 8px; z-index: 200; padding: 4px 10px; border-radius: 6px; background: rgba(0, 0, 0, 0.7); color: #8cf06a; font: 700 14px/1.2 Consolas, monospace; pointer-events: none; }
+.stress-box {
+  position: fixed; left: 50%; top: 18%; transform: translateX(-50%); z-index: 130; display: flex; flex-direction: column; gap: 0.6em; align-items: center;
+  padding: 1em 1.8em; border-radius: 0.8em; background: rgba(8, 22, 42, 0.94); border: 2px solid var(--line); font-size: clamp(14px, 2vh, 26px); text-align: center;
+}
+.stress-box b { font-size: 1.2em; }
+.stress-box span { color: var(--paper-dim); }
+.stress-box.ok { border-color: var(--ok); }
+.stress-box.bad { border-color: var(--bad); }
+
+/* CSS 3D：只在「華麗」時開啟，由瀏覽器的合成器處理，幾乎不耗效能 */
+.fx-rich .opt, .fx-rich .tf-b, .fx-rich .sock, .fx-rich .tn-b, .fx-rich .btn { transform-style: preserve-3d; }
+.fx-rich .opt.pressed { transform: perspective(700px) rotateX(14deg) scale(0.96); }
+.fx-rich .opt.on { transform: perspective(700px) translateZ(18px) rotateX(-6deg); }
+.fx-rich .opt.ok { animation: flipOk 0.7s ease-out; }
+.fx-rich .tf-b.pressed, .fx-rich .tn-b.pressed { transform: perspective(500px) rotateX(22deg) scale(0.92); }
+.fx-rich .tf-row.ok { animation: flipOk 0.7s ease-out; }
+.fx-rich .btn-go.pressed, .fx-rich .btn-start.pressed, .fx-rich .btn-again.pressed { transform: perspective(600px) rotateX(16deg) translateY(0.15em); }
+.fx-rich .trans.run .tr-big { animation: trStamp3d 2s both; }
+.stage.tilt3d { animation: tilt3d 0.7s ease-out; }
+.lv-hint.flip3d { animation: flip3d 0.7s ease-out; transform-origin: 50% 0; }
+.lv-hint.rise3d { animation: rise3d 0.75s cubic-bezier(.2,.9,.3,1.2); transform-origin: 50% 100%; }
+@keyframes flipOk { 0% { transform: perspective(700px) rotateY(0); } 55% { transform: perspective(700px) rotateY(180deg) scale(1.06); } 100% { transform: perspective(700px) rotateY(360deg); } }
+@keyframes tilt3d {
+  0% { transform: perspective(900px) rotateX(0) rotateY(0); }
+  20% { transform: perspective(900px) rotateX(9deg) rotateY(-7deg); }
+  45% { transform: perspective(900px) rotateX(-5deg) rotateY(5deg); }
+  70% { transform: perspective(900px) rotateX(2deg) rotateY(-2deg); }
+  100% { transform: perspective(900px) rotateX(0) rotateY(0); }
+}
+@keyframes flip3d { 0% { transform: perspective(700px) rotateX(-95deg); opacity: 0.2; } 60% { transform: perspective(700px) rotateX(12deg); opacity: 1; } 100% { transform: perspective(700px) rotateX(0); } }
+@keyframes rise3d { 0% { transform: perspective(700px) rotateX(80deg) translateY(40%); opacity: 0; } 100% { transform: perspective(700px) rotateX(0) translateY(0); opacity: 1; } }
+@keyframes trStamp3d { 0%, 22% { opacity: 0; transform: perspective(800px) rotateY(-120deg) scale(1.6); } 34% { opacity: 1; transform: perspective(800px) rotateY(12deg) scale(0.95); } 42%, 100% { opacity: 1; transform: perspective(800px) rotateY(0) scale(1); } }

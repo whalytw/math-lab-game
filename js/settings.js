@@ -33,7 +33,7 @@
     tapTol: v => ['small', 'mid', 'large'].includes(v),
     palm: v => ['off', 'normal', 'strict'].includes(v),
     renderScale: v => [1, 0.75, 0.5].includes(v),
-    fx: v => ['full', 'lite'].includes(v),
+    fx: v => ['rich', 'full', 'lite'].includes(v),
     volume: v => [0, 0.35, 0.7, 1].includes(v),
     classSize: v => Number.isInteger(v) && v >= 3 && v <= 60,
     pin: v => v === '' || /^\d{4}$/.test(v)

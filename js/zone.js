@@ -324,6 +324,7 @@
         LG.audio.play('wrong');
         this.useHelp('auto');
         this.shake();
+        if (LG.settings.data.fx === 'rich') LG.fx3d.css(this.stage, 'tilt3d', 700);
         return 'retry';
       }
       this.fail('wrong');
@@ -338,6 +339,7 @@
       this.timeLeft -= p;
       this.lastSec = Math.ceil(this.timeLeft - 1e-6);
       this.showHint();
+      LG.fx3d.play(this, 'help');
       this.floatText(this.hud.timer, `−${p}`, 'bad');
       if (mode === 'auto') this.toast('答錯了', `已自動使用求救卡　−${p} 秒`, 'bad');
       else { LG.audio.play('select'); this.toast('使用求救卡', `提示已出現　−${p} 秒`, 'warn'); }
@@ -357,6 +359,11 @@
       this.refreshHelpBtn(true);
       if (this.scr) this.scr.actions.classList.add('done');
       try { this.level.celebrate(); } catch (e) { console.error(e); }
+      // 華麗特效：3D 慶祝（取代 2D 彩帶）；3D 忙不過來時改回 2D 彩帶
+      if (LG.settings.data.fx === 'rich' && !LG.fx3d.play(this, 'correct')) {
+        const p = this.fx.rel(this.scr ? this.scr.main : this.inner);
+        this.fx.confetti(p.x, p.y, { n: 40, force: true });
+      }
       this.scoreFly(remain, from);
       const ct = Math.max(2.1, (this.level && this.level.celebrateTime) || 0);
       this.after(ct, () => { if (this.state === 'resolving') this.gotoNext(); });
@@ -398,6 +405,7 @@
       this.refreshHelpBtn(true);
       if (this.level) { try { this.level.reveal(reason); } catch (e) { console.error(e); } }
       this.showAnswer();
+      LG.fx3d.play(this, 'wrong');
       const tok = this.revealToken = {};
       this.showNext(tok);
       this.after(REVEAL_AUTO, () => { if (this.revealToken === tok && this.state === 'resolving') this.gotoNext(); });
@@ -518,7 +526,11 @@
         LG.audio.play('fanfare');
         this.resultAnim = { el: numEl, to: this.score, t: 0, dur: 1.3 };
         const p = this.fx.rel(numEl);
-        this.fx.confetti(p.x, p.y, { n: isBest ? 70 : 40 });
+        // 華麗特效：獎盃或煙火（稱號越高煙火越多）；否則用 2D 彩帶
+        const ti = TITLES.indexOf(tier);
+        if (!(LG.settings.data.fx === 'rich' && LG.fx3d.play(this, 'result', { tier: ti, shells: ti <= 1 ? 3 : ti <= 3 ? 2 : 1 }))) {
+          this.fx.confetti(p.x, p.y, { n: isBest ? 70 : 40, force: true });
+        }
       });
       this.after(AGAIN_DELAY, () => btn.classList.remove('wait'));
       LG.input.onTap(btn, () => { if (this.state === 'result' && !btn.classList.contains('wait')) this.startGame(); }, { sound: false });
@@ -530,6 +542,7 @@
       this.revealToken = null;
       this.trans.stop();
       this.fx.clear();
+      LG.fx3d.clear(this);
       this.clearScreen();
       this.state = 'idle';
       this.score = 0;

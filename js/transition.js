@@ -54,6 +54,7 @@
         this.big.innerHTML = `<span class="pre">第</span><span class="n">${info.num}</span><span class="post">關</span>`;
         this.name.textContent = m.name;
         this.unit.textContent = `${m.tag}｜${m.topic}`;
+        LG.fx3d.play(z, 'trans', { meta: m, num: info.num });
       }
       this.el.style.setProperty('--tc', this.color);
       this.el.classList.remove('run');

@@ -59,6 +59,8 @@
 
     confetti(x, y, o) {
       o = o || {};
+      // 華麗特效時，慶祝改由 3D 特效處理（zone.js 在 3D 忙不過來時會帶 force 呼叫 2D 版）
+      if (!o.force && LG.settings.data.fx === 'rich' && LG.fx3d && LG.fx3d.enabled()) return;
       this.burst(x, y, Object.assign({
         n: 46, shape: 'rect', angle: -Math.PI / 2, spread: 1.15,
         speed: [260, 720], life: [1.0, 1.8], size: [6, 12], gravity: 900, drag: 1.2,

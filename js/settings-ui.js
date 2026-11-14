@@ -3,7 +3,22 @@
 (function (LG) {
   const U = LG.util, S = LG.settings, I = LG.input;
   const UI = {};
-  let root, segs = [], keypad, touchTest, levelBtns = [], estEl, pinEl, flashEl, classEl, unitSumEl, bookSel, unitRow;
+  let root, segs = [], keypad, touchTest, levelBtns = [], estEl, pinEl, flashEl, classEl, unitSumEl, bookSel, unitRow, fxRow, fxNote;
+
+  /* 華麗特效壓力測試：關閉設定頁，三區同時播放最重的特效 30 秒，結束後顯示結果 */
+  function runStress() {
+    if (!LG.fx3d.init()) { flash('這台電腦不支援 3D，無法使用華麗特效'); return; }
+    if (LG.game.zones.some(z => z.state !== 'idle' && z.state !== 'result')) { flash('請等三區都在開始畫面或總分畫面時再測試'); return; }
+    UI.close();
+    const box = U.el('div', 'stress-box', '<b>華麗特效測試中…</b><span>三區同時播放最重的 3D 特效，約 30 秒</span>');
+    document.getElementById('overlays').appendChild(box);
+    LG.fx3d.stress(30, r => {
+      const verdict = r.ok ? '順暢，可以使用「華麗」' : r.avg >= 35 ? '略有卡頓，建議把「畫面解析度」調成 75% 再測一次，或使用「完整」' : '不夠順暢，建議使用「完整」';
+      box.classList.add(r.ok ? 'ok' : 'bad');
+      box.innerHTML = `<b>測試結果：平均 ${Math.round(r.avg)} fps、最低 ${Math.round(r.min)} fps</b><span>${verdict}</span><div class="st-btn primary sb-close">關閉</div>`;
+      I.onTap(box.querySelector('.sb-close'), () => box.remove());
+    });
+  }
 
   /* ---------- 設定頁 ---------- */
   function seg(label, key, opts, note) {
@@ -94,12 +109,16 @@
       seg('點擊容錯範圍', 'tapTol', [{ v: 'small', t: '小' }, { v: 'mid', t: '中' }, { v: 'large', t: '大' }], '手指稍微滑出按鈕仍算點到'),
       seg('手掌誤觸過濾', 'palm', [{ v: 'off', t: '關閉' }, { v: 'normal', t: '標準' }, { v: 'strict', t: '嚴格' }], '忽略接觸面積太大的觸控'),
       seg('畫面解析度', 'renderScale', [{ v: 1, t: '100%' }, { v: 0.75, t: '75%' }, { v: 0.5, t: '50%' }], '動畫卡頓時調低'),
-      seg('特效', 'fx', [{ v: 'full', t: '完整' }, { v: 'lite', t: '精簡' }]),
+      (fxRow = seg('特效', 'fx', [{ v: 'rich', t: '華麗' }, { v: 'full', t: '完整' }, { v: 'lite', t: '精簡' }], '華麗：加上 3D 特效；不順時會自動改回完整')),
       seg('音效', 'volume', [{ v: 0, t: '關' }, { v: 0.35, t: '小' }, { v: 0.7, t: '中' }, { v: 1, t: '大' }])
     );
+    fxNote = U.el('div', 'fx-note');
+    fxRow.appendChild(fxNote);
     const tt = U.el('div', 'st-row');
-    tt.innerHTML = '<div class="st-label">觸控測試<small>請三位同學同時在各區拖曳，確認都能偵測</small></div>';
-    tt.appendChild(button('開始觸控測試', () => touchTest.open()));
+    tt.innerHTML = '<div class="st-label">觸控與效能測試<small>觸控：三位同學同時在各區拖曳。華麗特效：三區同時播放最重的特效 30 秒，量測流暢度</small></div><div class="seg tt-row"></div>';
+    const ttRow = tt.querySelector('.tt-row');
+    ttRow.appendChild(button('觸控測試', () => touchTest.open()));
+    ttRow.appendChild(button('華麗特效測試', () => runStress()));
     ct.appendChild(tt);
 
     const ca = root.querySelector('.c-admin');
@@ -187,6 +206,8 @@
       <div class="${over ? 'over' : 'ok'}">每區合計最長約 <b>${Math.ceil(e.total / 60)}</b> 分鐘${over ? '，超過 50 分鐘，建議減少總題數或調低每關秒數' : ''}</div>
       <small>「最長」是每關都用完時間的情況，多數同學會提早完成。</small>`;
     pinEl.textContent = S.data.pin ? '目前：已設定' : '目前：未設定';
+    fxNote.textContent = LG.fx3d.failed ? '這台電腦不支援 3D，「華麗」會以「完整」顯示'
+      : LG.fx3d.degraded ? `剛才畫面不夠順暢（約 ${Math.round(LG.fx3d.fps)} fps），已自動改回「完整」` : '';
   }
 
   UI.init = () => {

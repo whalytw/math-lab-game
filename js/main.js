@@ -35,7 +35,9 @@
 
   LG.settings.onChange(k => {
     if (k === 'volume' || k === '*') LG.audio.setVolume(LG.settings.data.volume);
+    if (k === 'fx' || k === 'renderScale' || k === '*') LG.fx3d.applySetting();
   });
+  LG.fx3d.applySetting();
 
   // 第一次觸控時啟用音效（瀏覽器規定要有使用者操作）
   const unlock = () => LG.audio.unlock();
@@ -51,6 +53,7 @@
         try { z.update(dt); } catch (e) { console.error(e); }
       }
       try { LG.Shared3D.render(); } catch (e) { console.error(e); }
+      try { LG.fx3d.frame(dt); } catch (e) { console.error(e); }
     }
     requestAnimationFrame(frame);
   }
