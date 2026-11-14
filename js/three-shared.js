@@ -58,12 +58,13 @@
     const c = document.createElement('canvas');
     c.width = c.height = 256;
     const x = c.getContext('2d');
-    x.fillStyle = '#0d2747'; x.fillRect(0, 0, 256, 256);
-    x.strokeStyle = 'rgba(130, 190, 255, 0.16)'; x.lineWidth = 2;
+    const D = LG.theme.dom;
+    x.fillStyle = D.ground; x.fillRect(0, 0, 256, 256);
+    x.strokeStyle = D.groundLine; x.lineWidth = 2;
     for (let i = 64; i < 256; i += 64) {
       x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 256); x.moveTo(0, i); x.lineTo(256, i); x.stroke();
     }
-    x.strokeStyle = 'rgba(130, 190, 255, 0.45)'; x.lineWidth = 4;
+    x.strokeStyle = D.groundLine2; x.lineWidth = 4;
     x.strokeRect(0, 0, 256, 256);
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -90,8 +91,8 @@
 
   function makeTower() {
     const g = new THREE.Group();
-    const glass = new THREE.MeshLambertMaterial({ color: 0x3a9c93, emissive: 0x0b2b29 });
-    const gold = new THREE.MeshBasicMaterial({ color: 0xffd36b });
+    const glass = new THREE.MeshLambertMaterial({ color: LG.theme.dom.glass, emissive: LG.theme.dom.glassEm });
+    const gold = new THREE.MeshBasicMaterial({ color: LG.theme.dom.gold });
     const base = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.3, 2.6), glass);
     base.position.y = 0.65; g.add(base);
     let y = 1.3;
@@ -116,7 +117,7 @@
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const mat = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+    const mat = new THREE.PointsMaterial({ size: 0.34, vertexColors: true, transparent: true, blending: LG.theme.brush ? 1 : THREE.AdditiveBlending, depthWrite: false, fog: false });
     const points = new THREE.Points(geo, mat);
     points.frustumCulled = false;
     const P = [];
@@ -124,21 +125,22 @@
     return { points, geo, pos, col, P, next: 0, N };
   }
 
-  const DOMINO_COLORS = [0xffb547, 0xff8f73, 0x4fe0b0, 0xf2f6fb];
+  const DOMINO_COLORS = () => LG.theme.dom.dominos;
 
   class DominoScene {
     constructor() {
       const T = THREE;
       this.scene = new T.Scene();
-      this.scene.background = new T.Color(0x0a1a33);
-      this.scene.fog = new T.Fog(0x0a1a33, 16, 52);
+      const D = LG.theme.dom;
+      this.scene.background = new T.Color(D.bg);
+      this.scene.fog = new T.Fog(D.bg, D.fogNear, D.fogFar);
       this.camera = new T.PerspectiveCamera(52, 1.6, 0.1, 200);
-      this.scene.add(new T.HemisphereLight(0xd2e4ff, 0x1a2440, 1.25));
+      this.scene.add(new T.HemisphereLight(D.hemiSky, D.hemiGround, D.hemi));
       const sun = new T.DirectionalLight(0xffffff, 1.6);
       sun.position.set(-6, 12, 8);
       this.scene.add(sun);
       this.scene.add(makeGround());
-      this.scene.add(makeStars());
+      if (D.stars) this.scene.add(makeStars());
 
       this.dir = new T.Vector3(0.5, 0, -1).normalize();
       this.right = new T.Vector3().crossVectors(this.dir, new T.Vector3(0, 1, 0)).normalize();
@@ -154,10 +156,10 @@
         const inner = new T.Group();
         outer.add(inner);
         const geo = new T.BoxGeometry(w, h, th);
-        const mesh = new T.Mesh(geo, new T.MeshLambertMaterial({ color: DOMINO_COLORS[i % 4] }));
+        const mesh = new T.Mesh(geo, new T.MeshLambertMaterial({ color: DOMINO_COLORS()[i % 4] }));
         mesh.position.set(0, h / 2, -th / 2);
         inner.add(mesh);
-        const edges = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: 0x0a1a33, transparent: true, opacity: 0.6 }));
+        const edges = new T.LineSegments(new T.EdgesGeometry(geo), new T.LineBasicMaterial({ color: D.edge, transparent: true, opacity: 0.6 }));
         edges.position.copy(mesh.position);
         inner.add(edges);
         this.scene.add(outer);
@@ -232,7 +234,7 @@
         this.placeCamera(this.t / (total + 0.3));
         const top = this.towerPos.clone().add(new THREE.Vector3(0, this.tower.userData.height * 0.82, 0));
         const times = [total + 0.05, total + 0.4, total + 0.8];
-        const cols = [0xffd36b, 0x4fe0b0, 0xff8f73];
+        const cols = LG.theme.dom.fireworks;
         while (this.bursts < 3 && this.t >= times[this.bursts]) {
           const off = new THREE.Vector3(U.rand(-2.2, 2.2), U.rand(-1.5, 1.8), U.rand(-1, 1));
           this.burst(top.clone().add(off), cols[this.bursts]);
@@ -307,7 +309,7 @@
           this.boomed = true; LG.audio.play('firework');
           for (let k = 0; k < 90; k++) {
             const a = U.rand(0, 6.28), v = U.rand(40, 200);
-            this.parts.push({ x: this.w * 0.86, y: this.h * 0.18, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0, max: U.rand(0.8, 1.4), c: U.pick(['#ffd36b', '#4fe0b0', '#ff8f73']) });
+            this.parts.push({ x: this.w * 0.86, y: this.h * 0.18, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 0, max: U.rand(0.8, 1.4), c: U.pick(LG.theme.dom.fw2d) });
           }
         }
       } else if (this.mode === 'wobble') {
@@ -323,27 +325,27 @@
     render() {
       const g = this.ctx, W = this.w, H = this.h;
       const sky = g.createLinearGradient(0, 0, 0, H);
-      sky.addColorStop(0, '#081a33'); sky.addColorStop(1, '#14335c');
+      sky.addColorStop(0, LG.theme.dom.sky2d[0]); sky.addColorStop(1, LG.theme.dom.sky2d[1]);
       g.fillStyle = sky; g.fillRect(0, 0, W, H);
       const gy = H * 0.86;
-      g.fillStyle = '#0d2747'; g.fillRect(0, gy, W, H - gy);
-      g.strokeStyle = 'rgba(130,190,255,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(0, gy); g.lineTo(W, gy); g.stroke();
+      g.fillStyle = LG.theme.dom.ground; g.fillRect(0, gy, W, H - gy);
+      g.strokeStyle = LG.theme.dom.line2d; g.lineWidth = 2; g.beginPath(); g.moveTo(0, gy); g.lineTo(W, gy); g.stroke();
       // 101 剪影
       const tx = W * 0.86, tw = W * 0.07;
-      g.fillStyle = '#3a9c93';
+      g.fillStyle = LG.theme.dom.glass2d;
       let y = gy;
       g.fillRect(tx - tw * 0.8, y - H * 0.05, tw * 1.6, H * 0.05); y -= H * 0.05;
       for (let i = 0; i < 8; i++) {
         const sh = H * 0.07;
         g.beginPath(); g.moveTo(tx - tw * 0.45, y); g.lineTo(tx + tw * 0.45, y); g.lineTo(tx + tw * 0.62, y - sh); g.lineTo(tx - tw * 0.62, y - sh); g.closePath(); g.fill();
-        g.fillStyle = '#ffd36b'; g.fillRect(tx - tw * 0.62, y - sh - 2, tw * 1.24, 3); g.fillStyle = '#3a9c93';
+        g.fillStyle = LG.theme.dom.gold2d; g.fillRect(tx - tw * 0.62, y - sh - 2, tw * 1.24, 3); g.fillStyle = LG.theme.dom.glass2d;
         y -= sh;
       }
       g.fillRect(tx - tw * 0.3, y - H * 0.06, tw * 0.6, H * 0.06); y -= H * 0.06;
-      g.fillStyle = '#ffd36b'; g.fillRect(tx - 1.5, y - H * 0.1, 3, H * 0.1);
+      g.fillStyle = LG.theme.dom.gold2d; g.fillRect(tx - 1.5, y - H * 0.1, 3, H * 0.1);
       // 骨牌
       let x = W * 0.06, h = H * 0.09;
-      const cols = ['#ffb547', '#ff8f73', '#4fe0b0', '#f2f6fb'];
+      const cols = LG.theme.dom.dominos2d;
       for (let i = 0; i < this.n; i++) {
         const th = h * 0.2;
         g.save(); g.translate(x + th, gy); g.rotate(this.ang[i]);

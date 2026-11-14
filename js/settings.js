@@ -4,19 +4,20 @@
   const KEY = 'mathLab.settings.v2';
 
   const DEFAULTS = {
-    time: 45,             // 每關秒數 30～60
+    time: 30,             // 每關秒數 30～60（預設 30）
     difficulty: 'easy',   // easy / normal / hard（預設：簡單）
     penalty: 10,          // 求救卡扣秒
     base: 15,             // 答對基本分
     book: '3A',           // 冊數：1A 一上、3A 二上A版、3B 二上B版
     units: { '3A': [5, 6, 7] }, // 各冊勾選的出題單元（可複選）
-    count: 6,             // 每位同學的總題數（關數）
+    count: 8,             // 每位同學的總題數（關數，預設 8）
     dragDist: 'mid',      // 拖曳啟動距離
     tapTol: 'mid',        // 點擊容錯範圍
     palm: 'normal',       // 手掌誤觸過濾
     renderScale: 1,       // 畫面解析度比例
+    theme: 'tech',        // 介面風格：tech 科技、ink 水墨
     fx: 'rich',           // 特效：rich 華麗（預設）、full 完整、lite 精簡
-    fxVer: 2,             // 設定版本：舊版存的「完整」會在第一次載入時改成新預設「華麗」
+    fxVer: 3,             // 設定版本：預設值改過時，舊版存的「舊預設值」會在第一次載入時改成新預設值（見 S.load）
     volume: 0.7,          // 音量
     classSize: 27,        // 班級人數（只用來估算時間）
     pin: ''               // 設定頁密碼（空字串 = 不需要）
@@ -34,6 +35,7 @@
     tapTol: v => ['small', 'mid', 'large'].includes(v),
     palm: v => ['off', 'normal', 'strict'].includes(v),
     renderScale: v => [1, 0.75, 0.5].includes(v),
+    theme: v => ['tech', 'ink'].includes(v),
     fx: v => ['rich', 'full', 'lite'].includes(v),
     fxVer: v => Number.isInteger(v),
     volume: v => [0, 0.35, 0.7, 1].includes(v),
@@ -48,9 +50,12 @@
     try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { saved = {}; }
     const d = JSON.parse(JSON.stringify(DEFAULTS));
     Object.keys(DEFAULTS).forEach(k => { if (k in saved && VALID[k](saved[k])) d[k] = saved[k]; });
-    // 預設特效改為「華麗」：舊版設定中存的「完整」（當時的預設值）一次性改成「華麗」；選「精簡」的保留
-    if (saved.fxVer !== DEFAULTS.fxVer) {
-      if (d.fx === 'full') d.fx = 'rich';
+    // 預設值改過時，舊版設定中「仍是當時預設值」的項目一次性改成新預設值；老師自己改過的值保留
+    const ver = Number.isInteger(saved.fxVer) ? saved.fxVer : 1;
+    if (ver < DEFAULTS.fxVer) {
+      if (ver < 2 && d.fx === 'full') d.fx = 'rich';     // 第 2 版：特效預設改為「華麗」
+      if (ver < 3 && d.time === 45) d.time = 30;          // 第 3 版：每關秒數預設改為 30
+      if (ver < 3 && d.count === 6) d.count = 8;          // 第 3 版：每位同學總題數預設改為 8
       d.fxVer = DEFAULTS.fxVer;
       S.data = d;
       S.save();

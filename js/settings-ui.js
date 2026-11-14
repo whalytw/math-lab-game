@@ -80,6 +80,7 @@
 
     const cg = root.querySelector('.c-game');
     cg.append(
+      seg('介面風格', 'theme', Object.values(LG.THEMES).map(t => ({ v: t.id, t: t.label })), '只換外觀，題目與玩法不變'),
       seg('每關秒數', 'time', [30, 35, 40, 45, 50, 55, 60].map(v => ({ v, t: String(v) }))),
       seg('難度', 'difficulty', [{ v: 'easy', t: '簡單' }, { v: 'normal', t: '標準' }, { v: 'hard', t: '挑戰' }]),
       seg('求救卡扣秒', 'penalty', [5, 10, 15].map(v => ({ v, t: v + ' 秒' }))),

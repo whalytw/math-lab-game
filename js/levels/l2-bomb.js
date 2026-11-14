@@ -5,7 +5,7 @@
   const U = LG.util;
 
 
-  const WIRE = ['#ff5d5d', '#4da3ff', '#ffd34d', '#5ee08a'];
+  const WIRE = () => LG.TC('wires');
 
   const BOMB = `<svg class="bomb-svg" viewBox="0 0 320 128" aria-hidden="true">
     <g class="sticks"><rect x="18" y="16" width="284" height="28" rx="13"/><rect x="18" y="50" width="284" height="28" rx="13"/><rect x="18" y="84" width="284" height="28" rx="13"/></g>
@@ -40,7 +40,7 @@
       this.bctx = this.blade.getContext('2d');
       this.tagsEl = m.querySelector('.w-tags');
       const order = U.shuffle([0, 1, 2, 3]);
-      this.wires = order.map((oi, s) => ({ s, oi, color: WIRE[s], cut: false, cutX: 0, cutT: 0, droop: 0, state: '' }));
+      this.wires = order.map((oi, s) => ({ s, oi, color: WIRE()[s], cut: false, cutX: 0, cutT: 0, droop: 0, state: '' }));
       this.tags = this.wires.map(w => {
         const t = U.el('div', 'w-tag', U.rich(q.opts[w.oi]));
         t.style.setProperty('--wc', w.color);
@@ -236,7 +236,7 @@
         const a = this.trail[i - 1], b = this.trail[i];
         if (a.sid !== b.sid) continue;
         const k = 1 - b.age / 0.22;
-        g.strokeStyle = `rgba(255, 246, 200, ${(0.9 * k).toFixed(3)})`;
+        g.strokeStyle = `rgba(${LG.TC('trail')}, ${(0.9 * k).toFixed(3)})`;
         g.lineWidth = Math.max(2, this.W * 0.012 * k);
         g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.stroke();
       }

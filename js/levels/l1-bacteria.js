@@ -49,7 +49,7 @@
   }
 
   const XR = 3.7, N = 370; // 取樣範圍 [-3.7, 3.7]，中點 (index 185) 為 x = 0
-  const COLORS = { ok: '#8cf06a', bad: '#ff5a6a', answer: '#8cf06a' };
+  const COLORS = { get ok() { return LG.TC('ok'); }, get bad() { return LG.TC('bad'); }, get answer() { return LG.TC('ok'); } };
 
   class L1 extends LG.LevelBase {
 
@@ -236,13 +236,13 @@
       const g = this.graph;
       if (!g.view) return;
       g.clear();
-      if (this.refPts) g.polyline(this.refPts, { color: 'rgba(242,246,251,0.8)', width: 2.8, dash: [10, 8], glow: false });
+      if (this.refPts) g.polyline(this.refPts, { color: LG.TC('ref'), width: 2.8, dash: [10, 8], glow: false });
       for (const c of this.curves) {
         const mid = N / 2, k = c.prog;
         if (k <= 0) continue;
         g.polyline(c.pts, { color: c.color, alpha: c.alpha, width: 3.8, dash: c.dash, from: mid - k * mid, to: mid + k * mid });
       }
-      g.dot(0, 1, { r: 6, color: '#f2f6fb', halo: 'rgba(242,246,251,0.18)' });
+      g.dot(0, 1, { r: 6, color: LG.TC('fg'), halo: LG.TC('halo') });
     }
   }
 

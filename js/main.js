@@ -2,6 +2,7 @@
 'use strict';
 (function (LG) {
   LG.settings.load();
+  LG.applyTheme(LG.settings.data.theme);
 
   // 預先載入 KaTeX 與數字字型（避免第一關量字寬時字型還沒到）
   const warm = document.createElement('div');
@@ -35,6 +36,12 @@
 
   LG.settings.onChange(k => {
     if (k === 'volume' || k === '*') LG.audio.setVolume(LG.settings.data.volume);
+    if (k === 'theme' || k === '*') {
+      // 換風格：換顏色與 CSS，清掉正在播放的 3D 特效，各區重畫（正在作答的關卡也會換成新顏色）
+      LG.applyTheme(LG.settings.data.theme);
+      LG.fx3d.clear();
+      game.zones.forEach(z => z.onSettingsChanged());
+    }
     if (k === 'fx' || k === 'renderScale' || k === '*') LG.fx3d.applySetting();
   });
   LG.fx3d.applySetting();

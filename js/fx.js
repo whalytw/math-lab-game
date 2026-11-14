@@ -38,7 +38,8 @@
       let n = o.n || 26;
       if (this.lite()) n = Math.ceil(n / 2);
       const k = this.k();
-      const colors = o.colors || ['#ffffff', '#ffd34d'];
+      // 水墨風格：一律用墨色、朱砂的墨點（不用發光色）
+      const colors = (LG.TC('burst') && !o.keep) ? LG.TC('burst') : (o.colors || ['#ffffff', '#ffd34d']);
       const sp = o.speed || [120, 420], life = o.life || [0.5, 1.1], size = o.size || [3, 7];
       for (let i = 0; i < n; i++) {
         const a = o.angle != null ? o.angle + U.rand(-(o.spread || 0.6), o.spread || 0.6) : U.rand(0, Math.PI * 2);
@@ -52,7 +53,7 @@
           drag: o.drag == null ? 1.4 : o.drag,
           shape: o.shape || 'dot',
           rot: U.rand(0, 6.28), vr: U.rand(-9, 9),
-          glow: o.shape !== 'rect'
+          glow: o.shape !== 'rect' && o.shape !== 'petal'
         });
       }
     }
@@ -62,9 +63,9 @@
       // 華麗特效時，慶祝改由 3D 特效處理（zone.js 在 3D 忙不過來時會帶 force 呼叫 2D 版）
       if (!o.force && LG.settings.data.fx === 'rich' && LG.fx3d && LG.fx3d.enabled()) return;
       this.burst(x, y, Object.assign({
-        n: 46, shape: 'rect', angle: -Math.PI / 2, spread: 1.15,
+        n: 46, shape: LG.theme.brush ? 'petal' : 'rect', angle: -Math.PI / 2, spread: 1.15, keep: true,
         speed: [260, 720], life: [1.0, 1.8], size: [6, 12], gravity: 900, drag: 1.2,
-        colors: ['#ffb547', '#ff8f73', '#4fe0b0', '#f2f6fb', '#8ec5ff', '#ffd34d']
+        colors: LG.TC('confetti')
       }, o));
     }
 
@@ -113,12 +114,22 @@
           g.save(); g.translate(p.x, p.y); g.rotate(p.rot);
           g.fillRect(-p.size / 2, -p.size * 0.3, p.size, p.size * 0.6);
           g.restore();
+        } else if (p.shape === 'petal') {
+          // 梅花瓣：一端尖的橢圓，翻轉時寬度變化
+          g.globalCompositeOperation = 'source-over';
+          g.save(); g.translate(p.x, p.y); g.rotate(p.rot);
+          g.scale(1, 0.35 + 0.65 * Math.abs(Math.cos(p.rot * 1.3)));
+          g.beginPath(); g.moveTo(-p.size * 0.55, 0);
+          g.quadraticCurveTo(0, -p.size * 0.55, p.size * 0.55, 0);
+          g.quadraticCurveTo(0, p.size * 0.55, -p.size * 0.55, 0);
+          g.fill();
+          g.restore();
         } else {
-          g.globalCompositeOperation = 'lighter';
+          g.globalCompositeOperation = LG.theme.blend;
           g.beginPath(); g.arc(p.x, p.y, p.size * (0.4 + 0.6 * k), 0, Math.PI * 2); g.fill();
         }
       }
-      g.globalCompositeOperation = 'lighter';
+      g.globalCompositeOperation = LG.theme.blend;
       for (let i = this.flies.length - 1; i >= 0; i--) {
         const f = this.flies[i];
         f.t += dt / f.dur;
@@ -132,7 +143,7 @@
         for (let j = 4; j >= 0; j--) {
           const q = pos(t - j * 0.05);
           g.globalAlpha = j === 0 ? 1 : 0.5 - j * 0.09;
-          g.fillStyle = j === 0 ? '#fff6d0' : f.color;
+          g.fillStyle = j === 0 ? LG.TC('flyHead') : f.color;
           g.beginPath(); g.arc(q[0], q[1], r * (1 - j * 0.15), 0, Math.PI * 2); g.fill();
         }
         if (t >= 1) {

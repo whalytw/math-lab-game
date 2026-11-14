@@ -206,6 +206,12 @@
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
     g.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+    // 有貼圖座標（例如花瓣貼圖）時，每個碎片沿用同一組 UV
+    if (base.attributes.uv) {
+      const bu = base.attributes.uv.array, uv = new Float32Array(n * vc * 2);
+      for (let i = 0; i < n; i++) uv.set(bu, i * vc * 2);
+      g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    }
     mat.vertexColors = true;
     const mesh = new THREE.Mesh(g, mat);
     mesh.frustumCulled = false;
@@ -384,10 +390,11 @@
   FX.tube = (L, zone, o) => {
     const kind = (o.meta && o.meta.curve) || 'all';
     const geo = R.tube(kind).clone(), uc = col(U.UNIT_HEX[o.meta ? o.meta.unit : 1] || '#8ec5ff');
-    const mat = stdMat(uc, { emissive: uc, emissiveIntensity: 0.65, roughness: 0.3, metalness: 0.3 });
+    const ink = LG.theme.brush;   // 水墨風格：不發光，像一筆濃墨畫出的曲線
+    const mat = stdMat(uc, ink ? { emissive: uc, emissiveIntensity: 0.15 } : { emissive: uc, emissiveIntensity: 0.65, roughness: 0.3, metalness: 0.3 });
     const mesh = new THREE.Mesh(geo, mat);
     const grp = new THREE.Group(); grp.add(mesh);
-    const head = glowQuad(0xffffff);
+    const head = ink ? inkQuad(R.blot(1), 0x221d18) : glowQuad(0xffffff);
     head.scale.setScalar(1.4); grp.add(head);
     const total = geo.index.count, seg = geo.userData.segIdx, pts = geo.userData.pts;
     grp.position.set(0, -L.hh * 0.32, -4);
@@ -579,6 +586,288 @@
     };
   };
 
+  /* ================= 水墨風格的 3D 特效 =================
+     全部用「畫在畫布上的貼圖＋平面」組成（墨點、漣漪、花瓣、印章、毛筆字），一般混色（不用發光），在宣紙底上才看得清楚。 */
+  const INK = '#221d18';
+  /* 墨點貼圖：中心濃、邊緣不規則暈開，旁邊帶幾滴濺出的小墨點 */
+  R.blots = {};
+  R.blot = seed => R.blots[seed] || (R.blots[seed] = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    let s = seed * 9301 + 49297; const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+    g.fillStyle = INK;
+    // 不規則的主體：多個重疊的半透明圓
+    for (let i = 0; i < 26; i++) {
+      const a = rnd() * Math.PI * 2, d = rnd() * 38, r = 26 + rnd() * 34;
+      g.globalAlpha = 0.18 + rnd() * 0.22;
+      g.beginPath(); g.arc(128 + Math.cos(a) * d, 128 + Math.sin(a) * d, r, 0, Math.PI * 2); g.fill();
+    }
+    g.globalAlpha = 0.85; g.beginPath(); g.arc(128, 128, 40, 0, Math.PI * 2); g.fill();
+    // 濺出的小墨點
+    for (let i = 0; i < 14; i++) {
+      const a = rnd() * Math.PI * 2, d = 70 + rnd() * 48, r = 2 + rnd() * 7;
+      g.globalAlpha = 0.5 + rnd() * 0.4;
+      g.beginPath(); g.arc(128 + Math.cos(a) * d, 128 + Math.sin(a) * d, r, 0, Math.PI * 2); g.fill();
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })());
+  /* 漣漪：淡墨圓環 */
+  R.ringTex = () => R._ringTex || (R._ringTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 80, 128, 128, 126);
+    gr.addColorStop(0, 'rgba(34,29,24,0)'); gr.addColorStop(0.55, 'rgba(34,29,24,0.55)'); gr.addColorStop(0.75, 'rgba(34,29,24,0.25)'); gr.addColorStop(1, 'rgba(34,29,24,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })());
+  /* 梅花瓣 */
+  R.petalTex = () => R._petalTex || (R._petalTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.translate(64, 64);
+    const gr = g.createRadialGradient(-30, 0, 4, 0, 0, 60);
+    gr.addColorStop(0, '#fff3f1'); gr.addColorStop(0.6, '#ffffff'); gr.addColorStop(1, '#f4c9cc');
+    g.fillStyle = gr;
+    g.beginPath(); g.moveTo(-56, 0); g.bezierCurveTo(-30, -48, 40, -50, 58, -6); g.quadraticCurveTo(62, 0, 58, 6); g.bezierCurveTo(40, 50, -30, 48, -56, 0); g.fill();
+    g.strokeStyle = 'rgba(160, 40, 50, 0.35)'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = 'rgba(160, 40, 50, 0.5)'; g.beginPath(); g.arc(-44, 0, 5, 0, Math.PI * 2); g.fill();
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })());
+  /* 朱砂印章：方形、白字、邊緣略殘 */
+  R.seals = {};
+  R.seal = text => R.seals[text] || (R.seals[text] = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const g = c.getContext('2d');
+    g.fillStyle = '#b8322a';
+    g.beginPath(); g.moveTo(14, 18); g.lineTo(242, 12); g.lineTo(244, 240); g.lineTo(16, 244); g.closePath(); g.fill();
+    g.strokeStyle = '#fff6e8'; g.lineWidth = 7; g.strokeRect(30, 30, 196, 196);
+    g.fillStyle = '#fff6e8';
+    g.font = `400 ${text.length > 1 ? 92 : 150}px "DFKai-SB", "BiauKai", "標楷體", "KaiTi", serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (text.length > 1) { g.fillText(text[0], 128, 82); g.fillText(text[1], 128, 178); } else g.fillText(text, 128, 136);
+    // 印泥不均：隨機挖掉一些小點
+    g.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 90; i++) { g.globalAlpha = Math.random() * 0.6; g.beginPath(); g.arc(Math.random() * 256, Math.random() * 256, Math.random() * 3.5, 0, Math.PI * 2); g.fill(); }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })());
+  /* 一筆毛筆橫畫（用來組成 ✕） */
+  R.strokeTex = () => R._strokeTex || (R._strokeTex = (() => {
+    // 畫布留足上下空間，淡墨暈染才不會被切成一個方框
+    const c = document.createElement('canvas'); c.width = 512; c.height = 192;
+    const g = c.getContext('2d');
+    const pts = [];
+    for (let i = 0; i <= 60; i++) pts.push([30 + i * 7.5, 96 + Math.sin(i * 0.18) * 3]);
+    LG.brushStroke(g, pts, 46, '#7a1e16', 1);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })());
+  /* 貼圖平面（一般混色） */
+  function inkQuad(tex, color, o) {
+    const m = new THREE.MeshBasicMaterial(Object.assign({ map: tex, color: color == null ? 0xffffff : color, transparent: true, depthWrite: false, side: DS() }, o || {}));
+    return new THREE.Mesh(R.unit(), m);
+  }
+
+  /* 轉場 A：墨滴落在宣紙上暈開，泛起漣漪 */
+  FX.inkDrop = (L, zone, o) => {
+    const uc = col(U.UNIT_HEX[o.meta ? o.meta.unit : 1] || INK);
+    const grp = new THREE.Group(); grp.position.set(0, L.hh * 0.42, -1); L.scene.add(grp);
+    const blot = inkQuad(R.blot(2), 0xffffff); grp.add(blot);
+    const rings = [0, 1, 2].map(i => { const r = inkQuad(R.ringTex(), uc); r.position.z = 0.1 + i * 0.01; grp.add(r); return r; });
+    const drops = [];
+    for (let i = 0; i < 9; i++) {
+      const d = inkQuad(R.blot(3 + i % 3), 0xffffff); const a = i / 9 * Math.PI * 2 + U.rand(-0.2, 0.2);
+      d.userData = { vx: Math.cos(a) * U.rand(2.5, 4.5), vy: Math.sin(a) * U.rand(2.5, 4.5), s: U.rand(0.35, 0.6) };
+      grp.add(d); drops.push(d);
+    }
+    return {
+      dur: 1.95, weight: 1,
+      update(dt, t) {
+        const k = U.ease.outCubic(U.clamp(t / 0.55, 0, 1)), out = U.clamp((t - 1.45) / 0.5, 0, 1);
+        blot.scale.setScalar(0.4 + 3.6 * k); blot.material.opacity = 0.9 * (1 - out); blot.rotation.z = 0.3 * k;
+        rings.forEach((r, i) => { const rt = U.clamp((t - 0.15 - i * 0.22) / 1.1, 0, 1); r.scale.setScalar(1 + 7 * U.ease.outCubic(rt)); r.material.opacity = (rt > 0 ? 0.7 * (1 - rt) : 0) * (1 - out); });
+        drops.forEach(d => { const u = d.userData, dk = U.clamp(t / 0.5, 0, 1); d.position.set(u.vx * U.ease.outCubic(dk), u.vy * U.ease.outCubic(dk), 0.05); d.scale.setScalar(u.s * (0.4 + 0.6 * dk)); d.material.opacity = 0.85 * (1 - out); });
+      },
+      dispose() { L.scene.remove(grp); grp.traverse(m => { if (m.material) m.material.dispose(); }); }
+    };
+  };
+
+  /* 答對 A：梅花瓣飄落 */
+  FX.petals = (L, zone, o) => {
+    // 不受光照（背面才不會變成深褐色）
+    const n = 140, mat = new THREE.MeshBasicMaterial({ map: R.petalTex(), transparent: true, alphaTest: 0.25, side: DS() });
+    const base = R._petalGeo || (R._petalGeo = new THREE.PlaneGeometry(0.42, 0.42).toNonIndexed());
+    const B = Batch(base, n, mat);
+    const c = W(L, o.x, o.y), aspect = L.w / L.h, P = [];
+    const tints = ['#ffffff', '#ffd9dc', '#f7b8bf', '#ffe8e6'];
+    for (let i = 0; i < n; i++) {
+      const fromTop = i % 3 !== 0;
+      P.push({ p: V3(fromTop ? U.rand(-1, 1) * L.hh * aspect : c[0] + U.rand(-0.5, 0.5), fromTop ? L.hh * U.rand(1, 1.6) : c[1], U.rand(-1.5, 1.5)),
+        v: fromTop ? V3(U.rand(-0.6, 0.6), U.rand(-2.6, -1.4), 0) : V3(U.rand(-4, 4), U.rand(3, 8), U.rand(-2, 2)),
+        ax: rndAxis(), ang: U.rand(0, 6), w: U.rand(2, 6), s: U.rand(0.7, 1.3), ph: U.rand(0, 6) });
+      B.color(i, col(tints[i % tints.length]));
+    }
+    B.commitColor();
+    L.scene.add(B.mesh);
+    return {
+      dur: 2.6, weight: 2,
+      update(dt, t) {
+        for (let i = 0; i < n; i++) {
+          const p = P[i];
+          p.v.y = Math.max(p.v.y - 7 * dt, -1.8); p.v.x *= Math.exp(-1.2 * dt);
+          p.p.addScaledVector(p.v, dt); p.p.x += Math.sin(t * 2.2 + p.ph) * 0.9 * dt;
+          p.ang += p.w * dt;
+          B.set(i, p.p.x, p.p.y, p.p.z, p.ax.x, p.ax.y, p.ax.z, p.ang, p.s);
+        }
+        B.commit();
+        mat.opacity = U.clamp((this.dur - t) / 0.6, 0, 1);
+      },
+      dispose() { L.scene.remove(B.mesh); B.dispose(); mat.dispose(); }
+    };
+  };
+
+  /* 答對 B：朱砂印章「蓋」下去 */
+  FX.seal = (L, zone, o) => {
+    const word = U.pick(['答對', '妙', '善', '佳']);
+    const c = W(L, o.x, o.y);
+    const s = inkQuad(R.seal(word), 0xffffff); s.position.set(c[0], c[1], 1.5); L.scene.add(s);
+    const specks = [];
+    for (let i = 0; i < 8; i++) { const d = inkQuad(R.blot(6 + i % 3), 0xb8322a); d.userData = { a: i / 8 * Math.PI * 2, r: U.rand(1.3, 2.1), s: U.rand(0.18, 0.32) }; d.position.set(c[0], c[1], 1.4); L.scene.add(d); specks.push(d); }
+    const rot = U.rand(-0.2, 0.2);
+    return {
+      dur: 1.9, weight: 1,
+      update(dt, t) {
+        const k = U.clamp(t / 0.22, 0, 1), out = U.clamp((t - 1.45) / 0.45, 0, 1);
+        const sc = t < 0.22 ? 4.2 - 1.8 * U.ease.inCubic(k) : 2.4 + 0.12 * Math.exp(-(t - 0.22) * 12) * Math.sin((t - 0.22) * 40);
+        s.scale.setScalar(sc); s.rotation.z = rot; s.material.opacity = Math.min(1, t / 0.12) * (1 - out);
+        specks.forEach(d => { const u = d.userData, dk = U.clamp((t - 0.2) / 0.3, 0, 1); d.position.x = c[0] + Math.cos(u.a) * u.r * U.ease.outCubic(dk); d.position.y = c[1] + Math.sin(u.a) * u.r * U.ease.outCubic(dk); d.scale.setScalar(u.s * dk); d.material.opacity = (t > 0.2 ? 0.8 : 0) * (1 - out); });
+      },
+      dispose() { L.scene.remove(s); s.material.dispose(); specks.forEach(d => { L.scene.remove(d); d.material.dispose(); }); }
+    };
+  };
+
+  /* 答錯 A：墨汁潑濺（搭配 CSS 傾斜晃動） */
+  FX.splash = (L, zone, o) => {
+    cssPulse(zone.stage, 'tilt3d', 700);
+    const c = W(L, o.x, o.y), span = Math.abs(W(L, o.x + o.w / 2, o.y)[0] - c[0]) || 2;
+    const blots = [];
+    for (let i = 0; i < 6; i++) {
+      const b = inkQuad(R.blot(10 + i), i % 3 === 0 ? 0xb8322a : 0xffffff);
+      b.position.set(c[0] + U.rand(-1, 1) * span * 0.9, c[1] + U.rand(-0.8, 0.8) * span * 0.6, 1 + i * 0.01);
+      b.rotation.z = U.rand(0, 6); b.userData = { s: U.rand(1.2, 2.4), d: i * 0.06 };
+      L.scene.add(b); blots.push(b);
+    }
+    return {
+      dur: 1.6, weight: 1,
+      update(dt, t) {
+        blots.forEach(b => { const u = b.userData, k = U.clamp((t - u.d) / 0.16, 0, 1); b.scale.setScalar(u.s * (k < 1 ? U.ease.outBack(k) : 1)); b.material.opacity = (t > u.d ? 0.85 : 0) * U.clamp((this.dur - t) / 0.6, 0, 1); });
+      },
+      dispose() { blots.forEach(b => { L.scene.remove(b); b.material.dispose(); }); }
+    };
+  };
+
+  /* 答錯 B：毛筆畫一個大 ✕ */
+  FX.brushX = (L, zone, o) => {
+    const c = W(L, o.x, o.y), len = Math.min(L.hh * (L.w / L.h) * 1.5, 5.5);
+    const geo = R._xGeo || (R._xGeo = (() => { const gg = new THREE.PlaneGeometry(1, 0.375); gg.translate(0.5, 0, 0); return gg; })());
+    const strokes = [0, 1].map(i => {
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: R.strokeTex(), transparent: true, depthWrite: false, side: DS() }));
+      const ang = i ? -Math.PI * 0.75 : -Math.PI * 0.25;
+      m.rotation.z = ang; m.position.set(c[0] - Math.cos(ang) * len / 2, c[1] - Math.sin(ang) * len / 2, 1.2 + i * 0.01);
+      L.scene.add(m); return m;
+    });
+    return {
+      dur: 1.7, weight: 1,
+      update(dt, t) {
+        strokes.forEach((m, i) => { const k = U.ease.outCubic(U.clamp((t - i * 0.22) / 0.28, 0, 1)); m.scale.set(len * Math.max(0.001, k), len, 1); m.material.opacity = U.clamp((this.dur - t) / 0.5, 0, 1); });
+      },
+      dispose() { strokes.forEach(m => { L.scene.remove(m); m.material.dispose(); }); }
+    };
+  };
+
+  /* 求救 A：提示像卷軸一樣展開，旁邊泛起漣漪 */
+  FX.scroll = (L, zone, o) => {
+    cssPulse(zone.scr && zone.scr.hint, 'unroll', 750);
+    const c = W(L, o.x, o.y);
+    const rings = [0, 1].map(i => { const r = inkQuad(R.ringTex(), 0xb8860b); r.position.set(c[0], c[1], 0.5); L.scene.add(r); return r; });
+    return {
+      dur: 1.2, weight: 0.5,
+      update(dt, t) { rings.forEach((r, i) => { const k = U.clamp((t - i * 0.25) / 0.9, 0, 1); r.scale.setScalar(1 + 5 * U.ease.outCubic(k)); r.material.opacity = k > 0 ? 0.6 * (1 - k) : 0; }); },
+      dispose() { rings.forEach(r => { L.scene.remove(r); r.material.dispose(); }); }
+    };
+  };
+
+  /* 求救 B：提示框旁點上一個朱砂「提」字印 */
+  FX.hintSeal = (L, zone, o) => {
+    cssPulse(zone.scr && zone.scr.hint, 'rise3d', 750);
+    const c = W(L, o.x, o.y), aspect = L.w / L.h;
+    const s = inkQuad(R.seal('提'), 0xffffff); s.position.set(Math.min(c[0] + L.hh * aspect * 0.75, L.hh * aspect * 0.82), c[1] + 0.4, 1.2); L.scene.add(s);
+    return {
+      dur: 1.3, weight: 0.5,
+      update(dt, t) { const k = U.clamp(t / 0.2, 0, 1); s.scale.setScalar(t < 0.2 ? 2.4 - 1.2 * k : 1.2); s.material.opacity = Math.min(1, t / 0.1) * U.clamp((this.dur - t) / 0.4, 0, 1); },
+      dispose() { L.scene.remove(s); s.material.dispose(); }
+    };
+  };
+
+  /* 總分 A：大印章蓋上稱號（狀元、榜眼…），四周梅花瓣 */
+  FX.sealResult = (L, zone, o) => {
+    const t0 = LG.theme.titles[o.tier || 0];
+    // 印章連同四周花瓣約佔 ±2.4，往內收，避免被區域右緣切掉
+    const c = W(L, o.x, o.y), edge = L.hh * (L.w / L.h) - 2.4;
+    c[0] = Math.min(c[0], edge);
+    const s = inkQuad(R.seal(t0[1].slice(0, 2)), 0xffffff); s.position.set(c[0], c[1], 1.5); L.scene.add(s);
+    const pts = [];
+    for (let i = 0; i < 18; i++) { const p = inkQuad(R.petalTex(), 0xffffff); const a = i / 18 * Math.PI * 2; p.userData = { a, r: U.rand(1.6, 2.6), w: U.rand(-3, 3) }; p.position.set(c[0], c[1], 1.4); L.scene.add(p); pts.push(p); }
+    return {
+      dur: 4.4, weight: 2,
+      update(dt, t) {
+        const k = U.clamp(t / 0.25, 0, 1), out = U.clamp((t - 3.7) / 0.7, 0, 1);
+        s.scale.setScalar(t < 0.25 ? 4.5 - 2.4 * U.ease.inCubic(k) : 2.1 + 0.1 * Math.exp(-(t - 0.25) * 10) * Math.sin((t - 0.25) * 36));
+        s.rotation.z = -0.08; s.material.opacity = Math.min(1, t / 0.15) * (1 - out);
+        pts.forEach(p => { const u = p.userData, dk = U.ease.outCubic(U.clamp((t - 0.25) / 1.2, 0, 1)); p.position.x = c[0] + Math.cos(u.a + t * 0.3) * u.r * dk; p.position.y = c[1] + Math.sin(u.a + t * 0.3) * u.r * dk - t * 0.15; p.rotation.z = u.w * t; p.scale.setScalar(0.45 * dk); p.material.opacity = (1 - out) * (t > 0.25 ? 1 : 0); });
+      },
+      dispose() { L.scene.remove(s); s.material.dispose(); pts.forEach(p => { L.scene.remove(p); p.material.dispose(); }); }
+    };
+  };
+
+  /* 總分 B：墨梅綻放（花瓣從幾個點炸開後飄落） */
+  FX.plum = (L, zone, o) => {
+    const shells = o.shells || 2, per = 160, N = shells * per, aspect = L.w / L.h;
+    const pos = new Float32Array(N * 3), colr = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+    const pm = new THREE.PointsMaterial({ size: 0.6, map: R.petalTex(), transparent: true, depthWrite: false, vertexColors: true, alphaTest: 0.2 });
+    // 每片花瓣有自己的下落終速與飄動幅度，才不會排成整齊的橫線
+    const term = new Float32Array(N), sway = new Float32Array(N);
+    for (let i = 0; i < N; i++) { term[i] = U.rand(0.5, 1.8); sway[i] = U.rand(0.3, 1.4); }
+    const ptsObj = new THREE.Points(geo, pm); L.scene.add(ptsObj);
+    const tints = ['#ffffff', '#ffd2d6', '#f2a6ae', '#d76a77'].map(col);
+    const S = [];
+    for (let s = 0; s < shells; s++) {
+      S.push({ t0: s * 0.5, x: U.rand(-0.55, 0.55) * L.hh * aspect, y: U.rand(0.1, 0.5) * L.hh, burst: false });
+      for (let i = 0; i < per; i++) { const j = (s * per + i) * 3, cc = tints[i % 4]; pos[j + 1] = -999; colr.set([cc.r, cc.g, cc.b], j); }
+    }
+    return {
+      dur: 1 + shells * 0.5 + 2, weight: 2,
+      update(dt, t) {
+        for (let s = 0; s < shells; s++) {
+          const sh = S[s], lt = t - sh.t0;
+          if (lt < 0) continue;
+          if (!sh.burst) {
+            sh.burst = true;
+            for (let i = 0; i < per; i++) { const j = (s * per + i) * 3, a = U.rand(0, Math.PI * 2), sp = U.rand(1.5, 4); pos[j] = sh.x; pos[j + 1] = sh.y; pos[j + 2] = 0; vel[j] = Math.cos(a) * sp; vel[j + 1] = Math.sin(a) * sp; vel[j + 2] = U.rand(-1, 1); }
+          }
+          for (let i = 0; i < per; i++) {
+            const q = s * per + i, j = q * 3;
+            vel[j] *= Math.exp(-2 * dt); vel[j + 1] = Math.max(vel[j + 1] * Math.exp(-2 * dt) - 2.2 * dt, -term[q]);
+            pos[j] += vel[j] * dt + Math.sin(t * 1.7 + q * 0.37) * sway[q] * dt; pos[j + 1] += vel[j + 1] * dt; pos[j + 2] += vel[j + 2] * dt;
+          }
+        }
+        geo.attributes.position.needsUpdate = true;
+        const a = U.clamp((this.dur - t) / 0.8, 0, 1);
+        pm.opacity = a;
+      },
+      dispose() { L.scene.remove(ptsObj); geo.dispose(); pm.dispose(); }
+    };
+  };
+
   /* CSS 3D 小動畫（幾乎不耗效能） */
   function cssPulse(el, cls, ms) {
     if (!el) return;
@@ -595,7 +884,16 @@
     help: ['helpFlip', 'helpSpot'],
     result: ['trophy', 'fireworks']
   };
-  const WEIGHT = { cubes: 2, tube: 1, confetti: 2, shards: 2, shatter: 1, symbols: 1, helpFlip: 0.5, helpSpot: 0.5, trophy: 2, fireworks: 2 };
+  /* 水墨風格的兩種特效 */
+  const EVENTS_INK = {
+    trans: ['inkDrop', 'tube'],
+    correct: ['petals', 'seal'],
+    wrong: ['splash', 'brushX'],
+    help: ['scroll', 'hintSeal'],
+    result: ['sealResult', 'plum']
+  };
+  const WEIGHT = { cubes: 2, tube: 1, confetti: 2, shards: 2, shatter: 1, symbols: 1, helpFlip: 0.5, helpSpot: 0.5, trophy: 2, fireworks: 2,
+    inkDrop: 1, petals: 2, seal: 1, splash: 1, brushX: 1, scroll: 0.5, hintSeal: 0.5, sealResult: 2, plum: 2 };
   const load = () => F.active.reduce((s, e) => s + (e.weight || 1), 0);
 
   /* 依時機整理出位置資訊 */
@@ -618,7 +916,7 @@
   /* 播放：回傳 true 表示由 3D 處理；false 表示呼叫端應改用一般（2D）特效 */
   F.play = (zone, ev, o, retry) => {
     if (!F.enabled() || !F.init() || F.lost) return false;
-    const list = EVENTS[ev];
+    const list = (LG.theme.brush ? EVENTS_INK : EVENTS)[ev];
     if (!list) return false;
     const key = zone.idx + ':' + ev;
     let vi = F.last[key] == null ? U.randInt(0, list.length - 1) : (F.last[key] + 1) % list.length;

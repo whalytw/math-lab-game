@@ -492,11 +492,11 @@
     /* ---- 總分畫面 ---- */
     showResult() {
       this.clearScreen();
-      this.inner.style.setProperty('--uc', '#f2f6fb');
+      this.inner.style.setProperty('--uc', LG.TC('fg'));
       const n = this.cfg.levels.length;
       const max = n * (this.cfg.base + this.cfg.time);
       const ratio = this.score / max;
-      const tier = TITLES.find(t => ratio >= t[0]);
+      const tier = LG.theme.titles.find(t => ratio >= t[0]);
       const prevBest = LG.game.best || 0;
       LG.game.best = Math.max(prevBest, this.score);
       const isBest = this.score > prevBest && this.score > 0;
@@ -527,7 +527,7 @@
         this.resultAnim = { el: numEl, to: this.score, t: 0, dur: 1.3 };
         const p = this.fx.rel(numEl);
         // 華麗特效：獎盃或煙火（稱號越高煙火越多）；否則用 2D 彩帶
-        const ti = TITLES.indexOf(tier);
+        const ti = LG.theme.titles.indexOf(tier);
         if (!(LG.settings.data.fx === 'rich' && LG.fx3d.play(this, 'result', { tier: ti, shells: ti <= 1 ? 3 : ti <= 3 ? 2 : 1 }))) {
           this.fx.confetti(p.x, p.y, { n: isBest ? 70 : 40, force: true });
         }

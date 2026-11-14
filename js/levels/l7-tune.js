@@ -102,8 +102,8 @@
       if (!g.view) return;
       g.clear();
       const target = this.q.target || this.q.plot(this.vals(this.q.ans));
-      g.shapes(target, { color: '#f2f6fb', width: 3, dash: [10, 9], alpha: 0.75, glow: false });
-      const col = this.state === 'ok' ? '#8cf06a' : this.state === 'answer' ? '#ffd34d' : (U.UNIT_HEX[this.zone.meta.unit] || '#fff');
+      g.shapes(target, { color: LG.TC('fg'), width: 3, dash: [10, 9], alpha: 0.75, glow: false });
+      const col = this.state === 'ok' ? LG.TC('ok') : this.state === 'answer' ? LG.TC('warn') : (U.UNIT_HEX[this.zone.meta.unit] || '#fff');
       g.shapes(this.q.plot(this.vals()), { color: col, width: 4 });
     }
   }

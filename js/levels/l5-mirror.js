@@ -205,12 +205,12 @@
       if (type === 'yx') { const lo = Math.max(v.x0, v.y0), hi = Math.min(v.x1, v.y1); a = [lo, lo]; b = [hi, hi]; }
       else if (type === 'xaxis') { a = [v.x0, 0]; b = [v.x1, 0]; }
       else { a = [0, v.y0]; b = [0, v.y1]; }
-      g.line(a[0], a[1], b[0], b[1], { color: '#bfe3ff', width: 9, alpha: 0.16, glow: false });
+      g.line(a[0], a[1], b[0], b[1], { color: LG.TC('portal'), width: 9, alpha: 0.16, glow: false });
       const off = (this.time * 26) % 22;
       const ctx = g.ctx;
       ctx.save();
       ctx.lineDashOffset = -off * g.s;
-      g.line(a[0], a[1], b[0], b[1], { color: '#d9eeff', width: 2.6, dash: [11, 11], glow: false, alpha: 0.9 });
+      g.line(a[0], a[1], b[0], b[1], { color: LG.TC('portal2'), width: 2.6, dash: [11, 11], glow: false, alpha: 0.9 });
       ctx.restore();
       // 標籤：y=x 放右上端、x 軸放右端下方、y 軸放下端右側，避開刻度與曲線標籤
       let lx, ly, opt;
@@ -222,7 +222,7 @@
         lx = 0; ly = Math.floor(v.y0 + (v.y1 - v.y0) * 0.55) + 0.5; // 夾在兩個刻度之間
         opt = rising ? { align: 'right', dx: -12, dy: 0 } : { align: 'left', dx: 12, dy: 0 };
       }
-      g.text(label, lx, ly, Object.assign({ color: '#d9eeff', font: `700 ${g.fontPx(0.05)}px "Microsoft JhengHei", "Noto Sans TC", sans-serif` }, opt));
+      g.text(label, lx, ly, Object.assign({ color: LG.TC('portal2'), font: `700 ${g.fontPx(0.05)}px "Microsoft JhengHei", "Noto Sans TC", sans-serif` }, opt));
     }
 
     draw() {
@@ -231,13 +231,13 @@
       g.clear();
       const ms = this.q.mirrors;
       ms.forEach((m, i) => this.drawPortal(m, ms.length > 1 ? (i === 0 ? '傳送門 ①' : '傳送門 ②') : '傳送門'));
-      for (const w of this.wrong) g.polyline(w, { color: '#ff5a6a', width: 3, dash: [9, 8], alpha: 0.85, glow: false });
+      for (const w of this.wrong) g.polyline(w, { color: LG.TC('bad'), width: 3, dash: [9, 8], alpha: 0.85, glow: false });
       const uc = U.UNIT_HEX[7];
       if (this.anim) {
         const a = this.anim, t = Math.min(a.t / 0.95, ms.length);
         g.polyline(this.srcPts, { color: uc, width: 3, alpha: 0.35, glow: false });
-        g.polyline(this.morphPts(t), { color: a.kind === 'ok' ? '#8cf06a' : '#ffd34d', width: 4 });
-        if (this.final) g.polyline(this.final.pts, { color: this.final.kind === 'ok' ? '#8cf06a' : '#ffd34d', width: 4, alpha: 0.6 + 0.4 * Math.sin(this.time * 6) ** 2 });
+        g.polyline(this.morphPts(t), { color: a.kind === 'ok' ? LG.TC('ok') : LG.TC('warn'), width: 4 });
+        if (this.final) g.polyline(this.final.pts, { color: this.final.kind === 'ok' ? LG.TC('ok') : LG.TC('warn'), width: 4, alpha: 0.6 + 0.4 * Math.sin(this.time * 6) ** 2 });
       } else {
         g.polyline(this.srcPts, { color: uc, width: 4 });
       }

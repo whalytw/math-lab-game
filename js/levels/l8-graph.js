@@ -84,7 +84,7 @@
       for (const c of this.cards) {
         if (!c.g.view) continue;
         c.g.clear();
-        const color = c.state === 'ok' ? '#8cf06a' : c.state === 'answer' ? '#ffd34d' : col;
+        const color = c.state === 'ok' ? LG.TC('ok') : c.state === 'answer' ? LG.TC('warn') : col;
         c.g.shapes(this.q.opts[c.oi], { color, width: 3.4 });
       }
     }

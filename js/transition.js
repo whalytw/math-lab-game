@@ -42,7 +42,7 @@
       const z = this.zone;
       this.info = info; this.t = 0; this.active = true; this.sparks = [];
       if (info.kind === 'finish') {
-        this.color = '#f2f6fb';
+        this.color = LG.TC('fg');
         this.curve = 'all';
         this.big.innerHTML = '<span class="w">完成</span>';
         this.name.textContent = (z.cfg ? z.cfg.levels.length : '') + ' 關挑戰結束';
@@ -56,7 +56,8 @@
         this.unit.textContent = `${m.tag}｜${m.topic}`;
         // 華麗特效若播的是「3D 發光曲線」，就不再畫 2D 曲線，避免同一條曲線出現兩次
         const fx3 = LG.fx3d.play(z, 'trans', { meta: m, num: info.num });
-        if (fx3 && fx3 !== 'cubes') this.curve = 'none';
+        // 3D 立體曲線（tube）播放時，不再畫 2D 曲線，避免畫面上出現兩條一樣的曲線
+        if (fx3 === 'tube') this.curve = 'none';
       }
       this.el.style.setProperty('--tc', this.color);
       this.el.classList.remove('run');
@@ -100,7 +101,7 @@
       const ox = W * 0.42, oy = H * 0.66;
       const X = x => ox + x * unit, Y = y => oy - y * unit;
       g.globalAlpha = fade * 0.5;
-      g.strokeStyle = 'rgba(220, 236, 255, 0.9)';
+      g.strokeStyle = LG.TC('trAxis');
       g.lineWidth = 2 * s;
       g.beginPath(); g.moveTo(0, oy); g.lineTo(W, oy); g.moveTo(ox, H); g.lineTo(ox, 0); g.stroke();
       const p = U.ease.inOutCubic(U.clamp((t - 0.28) / 0.95, 0, 1));
@@ -110,17 +111,17 @@
         curves.push({ f: x => Math.pow(2, x), x0: xL, x1: Math.min(xR, Math.log2(oy / unit + 1)), color: this.curve === 'all' ? U.UNIT_HEX[5] : this.color });
       }
       if (this.curve === 'log' || this.curve === 'mirror' || this.curve === 'all') {
-        curves.push({ f: x => Math.log2(x), x0: Math.pow(2, -(H - oy) / unit - 0.2), x1: xR, color: this.curve === 'all' ? U.UNIT_HEX[7] : this.curve === 'mirror' ? '#f2f6fb' : this.color, log: true });
+        curves.push({ f: x => Math.log2(x), x0: Math.pow(2, -(H - oy) / unit - 0.2), x1: xR, color: this.curve === 'all' ? U.UNIT_HEX[7] : this.curve === 'mirror' ? LG.TC('fg') : this.color, log: true });
       }
       if (this.curve === 'sin') curves.push({ f: x => 1.6 * Math.sin(1.35 * x), x0: xL, x1: xR, color: this.color });
       if (this.curve === 'vec') {
         curves.push({ f: x => 0.55 * x, x0: xL, x1: xR, color: this.color });
-        curves.push({ f: x => -1.4 * x, x0: Math.max(xL, -(H - oy) / unit / 1.4), x1: Math.min(xR, oy / unit / 1.4), color: '#f2f6fb' });
+        curves.push({ f: x => -1.4 * x, x0: Math.max(xL, -(H - oy) / unit / 1.4), x1: Math.min(xR, oy / unit / 1.4), color: LG.TC('fg') });
       }
       if (this.curve === 'poly') curves.push({ f: x => 0.28 * x * (x - 2) * (x + 2.4), x0: xL, x1: xR, color: this.color });
       if (this.curve === 'circle') {
         curves.push({ param: t => [0.6 + 1.6 * Math.cos(t), 0.4 + 1.6 * Math.sin(t)], x0: 0, x1: Math.PI * 2, color: this.color });
-        curves.push({ f: x => 0.6 * x + 1.4, x0: xL, x1: xR, color: '#f2f6fb' });
+        curves.push({ f: x => 0.6 * x + 1.4, x0: xL, x1: xR, color: LG.TC('fg') });
       }
       if (this.curve === 'mirror' || this.curve === 'all') {
         g.globalAlpha = fade * 0.55;
@@ -137,16 +138,21 @@
         }
         if (pts.length < 2) continue;
         g.lineJoin = 'round'; g.lineCap = 'round';
-        g.strokeStyle = c.color;
-        g.globalAlpha = fade * 0.25; g.lineWidth = 22 * s;
-        g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke();
-        g.globalAlpha = fade; g.lineWidth = 7 * s;
-        g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke();
+        if (LG.theme.brush) {
+          // 水墨風格：一筆畫出的毛筆曲線
+          LG.brushStroke(g, pts, 11 * s, c.color, fade);
+        } else {
+          g.strokeStyle = c.color;
+          g.globalAlpha = fade * 0.25; g.lineWidth = 22 * s;
+          g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke();
+          g.globalAlpha = fade; g.lineWidth = 7 * s;
+          g.beginPath(); pts.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.stroke();
+        }
         // 筆尖與火花
         const tip = pts[pts.length - 1];
         if (p < 1) {
           g.globalAlpha = fade;
-          g.fillStyle = '#ffffff';
+          g.fillStyle = LG.TC('tip');
           g.beginPath(); g.arc(tip[0], tip[1], 9 * s, 0, Math.PI * 2); g.fill();
           if (dt > 0 && LG.settings.data.fx !== 'lite') {
             for (let k = 0; k < 3; k++) {
@@ -156,7 +162,7 @@
           }
         }
       }
-      g.globalCompositeOperation = 'lighter';
+      g.globalCompositeOperation = LG.theme.blend;
       for (let i = this.sparks.length - 1; i >= 0; i--) {
         const k = this.sparks[i];
         k.life += dt;

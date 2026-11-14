@@ -55,7 +55,7 @@
       const W = this.bg.width, H = this.bg.height, s = this.s;
       g.clearRect(0, 0, W, H);
       // 面板
-      g.fillStyle = 'rgba(5, 18, 36, 0.62)';
+      g.fillStyle = LG.TC('panel');
       const r = Math.min(W, H) * 0.035;
       g.beginPath();
       if (g.roundRect) g.roundRect(0, 0, W, H, r); else g.rect(0, 0, W, H);
@@ -64,7 +64,7 @@
       g.beginPath(); g.rect(v.pad, v.pad, W - 2 * v.pad, H - 2 * v.pad); g.clip();
       // 格線
       g.lineWidth = Math.max(1, s);
-      g.strokeStyle = 'rgba(160, 205, 255, 0.13)';
+      g.strokeStyle = LG.TC('grid');
       g.beginPath();
       if (o.xPi) {
         const st = Math.PI / o.xPi;
@@ -74,8 +74,8 @@
       g.stroke();
       g.restore();
       // 座標軸
-      g.strokeStyle = 'rgba(242, 246, 251, 0.78)';
-      g.fillStyle = 'rgba(242, 246, 251, 0.78)';
+      g.strokeStyle = LG.TC('axis');
+      g.fillStyle = LG.TC('axis');
       g.lineWidth = 2 * s;
       const ax = this.X(0), ay = this.Y(0);
       const ah = 9 * s;
@@ -90,7 +90,7 @@
       // 刻度數字
       const fs = this.fontPx(0.048);
       g.font = `600 ${fs}px "Barlow Condensed", "Arial Narrow", sans-serif`;
-      g.fillStyle = 'rgba(200, 222, 245, 0.85)';
+      g.fillStyle = LG.TC('tick');
       g.textAlign = 'center'; g.textBaseline = 'top';
       if (o.xPi && ay >= v.pad && ay <= H - v.pad) {
         // π 刻度：只標 π/2 的倍數（π/4 等細格只畫格線）
@@ -121,7 +121,7 @@
         g.fillText('O', ax - 5 * s, ay + 4 * s);
       }
       g.font = `italic 600 ${fs * 1.15}px "Times New Roman", serif`;
-      g.fillStyle = 'rgba(242, 246, 251, 0.9)';
+      g.fillStyle = LG.TC('axisName');
       if (ay >= v.pad && ay <= H - v.pad) { g.textAlign = 'right'; g.textBaseline = 'bottom'; g.fillText('x', W - v.pad, ay - 5 * s); }
       if (ax >= v.pad && ax <= W - v.pad) { g.textAlign = 'left'; g.textBaseline = 'top'; g.fillText('y', ax + 8 * s, v.pad); }
     }
@@ -175,14 +175,30 @@
       g.setLineDash(o.dash ? o.dash.map(d => d * s) : []);
       const alpha = o.alpha == null ? 1 : o.alpha;
       const width = (o.width || 3.2) * s;
+      // 水墨風格：主要曲線改用毛筆筆觸（虛線、輔助線維持一般線條）
+      if (LG.theme.brush && o.glow !== false && !o.dash) {
+        const segs = [[]];
+        const first = interp(from);
+        if (first) segs[0].push(P(first[0], first[1]));
+        for (let i = Math.ceil(from); i <= Math.floor(to); i++) {
+          const p = pts[i];
+          if (!p) { if (segs[segs.length - 1].length) segs.push([]); continue; }
+          segs[segs.length - 1].push(P(p[0], p[1]));
+        }
+        const last = interp(to);
+        if (last) segs[segs.length - 1].push(P(last[0], last[1]));
+        for (const sg of segs) LG.brushStroke(g, sg, width * 1.25, o.color || LG.TC('fg'), alpha);
+        g.restore();
+        return;
+      }
       if (o.glow !== false) {
         g.globalAlpha = alpha * 0.22;
-        g.strokeStyle = o.color || '#fff';
+        g.strokeStyle = o.color || LG.TC('fg');
         g.lineWidth = width * 3.4;
         path(); g.stroke();
       }
       g.globalAlpha = alpha;
-      g.strokeStyle = o.color || '#fff';
+      g.strokeStyle = o.color || LG.TC('fg');
       g.lineWidth = width;
       path(); g.stroke();
       g.restore();
@@ -200,7 +216,7 @@
         g.fillStyle = o.halo;
         g.beginPath(); g.arc(this.X(x), this.Y(y), r * 2.4, 0, Math.PI * 2); g.fill();
       }
-      g.fillStyle = o.color || '#fff';
+      g.fillStyle = o.color || LG.TC('fg');
       g.beginPath(); g.arc(this.X(x), this.Y(y), r, 0, Math.PI * 2); g.fill();
       if (o.ring) {
         g.strokeStyle = o.ring; g.lineWidth = 2 * s;
@@ -214,7 +230,7 @@
       const g = this.ctx;
       g.save();
       g.font = o.font || `600 ${this.fontPx(0.055)}px "Barlow Condensed", sans-serif`;
-      g.fillStyle = o.color || '#fff';
+      g.fillStyle = o.color || LG.TC('fg');
       g.textAlign = o.align || 'left';
       g.textBaseline = o.baseline || 'middle';
       g.globalAlpha = o.alpha == null ? 1 : o.alpha;
@@ -258,7 +274,7 @@
           const hl = Math.min(len * 0.45, (o.head || 15) * s);
           g.save();
           g.globalAlpha = o.alpha == null ? 1 : o.alpha;
-          g.fillStyle = o.color || '#fff';
+          g.fillStyle = o.color || LG.TC('fg');
           g.beginPath();
           g.moveTo(X1, Y1);
           g.lineTo(X1 - hl * Math.cos(ang - 0.42), Y1 - hl * Math.sin(ang - 0.42));
@@ -271,7 +287,7 @@
       }
       if (sh.label) {
         const at = sh.at || (sh.vec ? [sh.vec[2], sh.vec[3]] : sh.pt);
-        if (at) this.text(sh.label, at[0], at[1], { color: o.labelColor || o.color || '#fff', dx: sh.dx == null ? 8 : sh.dx, dy: sh.dy == null ? -12 : sh.dy, alpha: o.alpha,
+        if (at) this.text(sh.label, at[0], at[1], { color: o.labelColor || o.color || LG.TC('fg'), dx: sh.dx == null ? 8 : sh.dx, dy: sh.dy == null ? -12 : sh.dy, alpha: o.alpha,
           font: `italic 700 ${this.fontPx(0.06)}px "Times New Roman", serif` });
       }
     }
