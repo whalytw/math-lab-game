@@ -3,67 +3,6 @@
 'use strict';
 (function (LG) {
   const U = LG.util;
-  const L = (a, b) => Math.log(b) / Math.log(a);
-  const lg = Math.log10;
-
-  // E(算式 TeX, 值, 類型, 驗算)；類型：def 定義、law 對數律、chg 換底、pow 指數與對數
-  const E = (tex, v, t, f) => ({ tex, v, t, f });
-  const BANK = {
-    easy: [
-      E('\\log_{2}8', '3', 'def', () => L(2, 8)),
-      E('\\log_{2}16', '4', 'def', () => L(2, 16)),
-      E('\\log_{3}9', '2', 'def', () => L(3, 9)),
-      E('\\log_{3}27', '3', 'def', () => L(3, 27)),
-      E('\\log_{5}25', '2', 'def', () => L(5, 25)),
-      E('\\log_{4}1', '0', 'def', () => L(4, 1)),
-      E('\\log_{6}6', '1', 'def', () => L(6, 6)),
-      E('\\log 1000', '3', 'def', () => lg(1000)),
-      E('\\log 0.01', '-2', 'def', () => lg(0.01)),
-      E('\\log_{2}\\dfrac{1}{4}', '-2', 'def', () => L(2, 1 / 4)),
-      E('\\log_{3}\\dfrac{1}{9}', '-2', 'def', () => L(3, 1 / 9)),
-      E('\\log_{5}\\dfrac{1}{5}', '-1', 'def', () => L(5, 1 / 5)),
-      E('\\log 2+\\log 5', '1', 'law', () => lg(2) + lg(5)),
-      E('\\log 4+\\log 25', '2', 'law', () => lg(4) + lg(25)),
-      E('\\log_{2}32', '5', 'def', () => L(2, 32))
-    ],
-    normal: [
-      E('\\log_{4}8', '3/2', 'def', () => L(4, 8)),
-      E('\\log_{9}27', '3/2', 'def', () => L(9, 27)),
-      E('\\log_{5}5\\sqrt{5}', '3/2', 'def', () => L(5, 5 * Math.sqrt(5))),
-      E('\\log_{2}\\sqrt{2}', '1/2', 'def', () => L(2, Math.SQRT2)),
-      E('\\log_{8}2', '1/3', 'def', () => L(8, 2)),
-      E('\\log_{\\frac{1}{3}}27', '-3', 'def', () => L(1 / 3, 27)),
-      E('\\log_{\\frac{1}{2}}8', '-3', 'def', () => L(1 / 2, 8)),
-      E('\\log 4+\\log 25', '2', 'law', () => lg(4) + lg(25)),
-      E('\\log 2+\\log 50', '2', 'law', () => lg(2) + lg(50)),
-      E('\\log 20-\\log 2', '1', 'law', () => lg(20) - lg(2)),
-      E('\\log 2-\\log 20', '-1', 'law', () => lg(2) - lg(20)),
-      E('\\log 8+\\log 125', '3', 'law', () => lg(8) + lg(125)),
-      E('2\\log 5+\\log 4', '2', 'law', () => 2 * lg(5) + lg(4)),
-      E('\\log_{6}4+\\log_{6}9', '2', 'law', () => L(6, 4) + L(6, 9)),
-      E('\\log_{2}24-\\log_{2}3', '3', 'law', () => L(2, 24) - L(2, 3)),
-      E('\\log_{3}18-\\log_{3}2', '2', 'law', () => L(3, 18) - L(3, 2)),
-      E('\\log_{4}5\\times\\log_{5}4', '1', 'chg', () => L(4, 5) * L(5, 4)),
-      E('\\log_{2}3\\times\\log_{3}8', '3', 'chg', () => L(2, 3) * L(3, 8)),
-      E('\\log_{3}5\\times\\log_{5}9', '2', 'chg', () => L(3, 5) * L(5, 9)),
-      E('2^{\\log_{2}3}', '3', 'pow', () => Math.pow(2, L(2, 3))),
-      E('10^{\\log 7}', '7', 'pow', () => Math.pow(10, lg(7)))
-    ],
-    hard: [
-      E('\\log_{8}\\sqrt{2}', '1/6', 'chg', () => L(8, Math.SQRT2)),
-      E('\\log_{25}\\dfrac{1}{5}', '-1/2', 'chg', () => L(25, 1 / 5)),
-      E('3\\log 2+\\log 5-2\\log 20', '-1', 'law', () => 3 * lg(2) + lg(5) - 2 * lg(20)),
-      E('\\log_{3}5\\times\\log_{5}7\\times\\log_{7}9', '2', 'chg', () => L(3, 5) * L(5, 7) * L(7, 9)),
-      E('4^{\\log_{2}3}', '9', 'pow', () => Math.pow(4, L(2, 3))),
-      E('3^{2\\log_{3}5}', '25', 'pow', () => Math.pow(3, 2 * L(3, 5))),
-      E('\\log_{16}64', '3/2', 'chg', () => L(16, 64)),
-      E('\\log_{2}3\\times\\log_{3}7\\times\\log_{7}8', '3', 'chg', () => L(2, 3) * L(3, 7) * L(7, 8)),
-      E('\\log_{\\sqrt{2}}8', '6', 'chg', () => L(Math.SQRT2, 8)),
-      E('2\\log_{6}2+\\log_{6}45-\\log_{6}5', '2', 'law', () => 2 * L(6, 2) + L(6, 45) - L(6, 5)),
-      E('\\log_{\\frac{1}{4}}8', '-3/2', 'chg', () => L(1 / 4, 8)),
-      E('\\log 15+\\log\\dfrac{2}{3}', '1', 'law', () => lg(15) + lg(2 / 3))
-    ]
-  };
   // 干擾選項（用不到的值）
   const DIST = {
     easy: ['-3', '-1', '0', '1', '2', '3', '4', '5', '-2'],
@@ -76,36 +15,6 @@
     chg: '換底：$\\log_a b=\\frac{\\log b}{\\log a}$，連乘時可以約分',
     pow: '$a^{\\log_a b}=b$'
   };
-
-  const recent = [];
-  function build(diff) {
-    const pool = BANK[diff];
-    let chosen = null;
-    for (let attempt = 0; attempt < 60 && !chosen; attempt++) {
-      const pick = [];
-      for (const it of U.shuffle(pool)) {
-        if (pick.some(c => c.v === it.v)) continue;
-        if (pick.filter(c => c.t === it.t).length >= 2) continue;
-        if (attempt < 40 && recent.includes(it.tex)) continue;
-        pick.push(it);
-        if (pick.length === 3) break;
-      }
-      if (pick.length === 3) chosen = pick;
-    }
-    chosen.forEach(c => { recent.push(c.tex); });
-    while (recent.length > 6) recent.shift();
-    const used = chosen.map(c => c.v);
-    const dist = U.pick(DIST[diff].filter(v => !used.includes(v)));
-    const types = [...new Set(chosen.map(c => c.t))];
-    return {
-      key: chosen.map(c => c.tex).join('|'),
-      items: chosen,
-      values: U.shuffle(used.concat([dist])),
-      dist,
-      hint: types.map(t => TYPE_HINT[t]).join('\n'),
-      explain: chosen.map(c => `$${c.tex.replace(/\\dfrac/g, '\\frac')}=${U.fracTex(c.v, false)}$`).join('；')
-    };
-  }
 
   /* 題庫中樞給 3 個值互不相同的算式；干擾值優先從同單元其他算式的值挑，不夠時用預設清單 */
   function compose(chosen, ctx) {
@@ -127,7 +36,6 @@
   }
 
   class L3 extends LG.LevelBase {
-    static pick(diff) { return build(diff); }
 
     constructor(zone, q, scr) {
       super(zone, q, scr);
@@ -336,9 +244,8 @@
   }
 
   L3.meta = { id: 3, name: '電路接線', unit: 6, topic: '對數定義與對數律' };
-  L3.BANK = BANK; L3.DIST = DIST; L3.build = build;
+  L3.DIST = DIST;
   L3.compose = compose;
   LG.registerLevel(L3);
   LG.bank.level('match', L3);
-  LG.bank.add(6, 'match', BANK);
 })(window.LG);

@@ -631,3 +631,11 @@ img, svg, canvas { -webkit-user-drag: none; }
 .u-quick .st-btn { padding: 0.4em 0.7em; }
 .u-sum { color: var(--paper-dim); line-height: 1.55; }
 .u-sum b { color: var(--warn); font-family: var(--font-num); font-size: 1.25em; padding: 0 0.1em; }
+
+/* ---------- 設定：冊數下拉選單 ---------- */
+.bk-sel {
+  font: inherit; font-size: 1.15em; font-weight: 800; padding: 0.45em 0.7em; border-radius: 0.45em;
+  color: #0b1a2c; background: var(--paper); border: 2px solid var(--u7); cursor: pointer; width: 100%;
+}
+.bk-sel option { font-weight: 700; color: #0b1a2c; background: #fff; }
+.u-grid .lv-tg span { white-space: normal; overflow: visible; line-height: 1.25; }

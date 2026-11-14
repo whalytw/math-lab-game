@@ -120,17 +120,8 @@
     };
   }
 
-  const D = (b, n) => ({ t: 'dig', b, n });
-  const F = (b, n) => ({ t: 'dec', b, n });
-  const BANK = {
-    easy: [D(2, 10), D(2, 20), D(3, 10), D(2, 30), F('0.5', 10), { t: 'lg', L: '5.67' }, { t: 'lg', L: '3.2' }, { t: 'tsu', a: 3, b: 4 }],
-    normal: [D(2, 50), D(2, 100), D(3, 20), D(3, 50), D(6, 10), F('0.5', 50), F('0.5', 100), F('1/3', 20),
-      { t: 'tsu', a: 3, b: 5 }, { t: 'star' }, { t: 'db' }],
-    hard: [D(5, 20), D(12, 10), D(3, 100), D(4, 25), F('0.3', 10), F('0.2', 10), F('0.4', 100), { t: 'mix' }, { t: 'db' }]
-  };
 
   class L4 extends LG.LevelBase {
-    static pick(diff) { return build(U.pickFresh('l4' + diff, BANK[diff], e => JSON.stringify(e))); }
 
     constructor(zone, q, scr) {
       super(zone, q, scr);
@@ -222,9 +213,8 @@
   }
 
   L4.meta = { id: 4, name: '巨數望遠鏡', unit: 6, topic: '常用對數與科學記號' };
-  L4.BANK = BANK; L4.build = build;
+  L4.build = build;
   L4.prep = e => (e.answer != null ? e : build(e));
   LG.registerLevel(L4);
   LG.bank.level('num', L4);
-  LG.bank.add(6, 'num', BANK);
 })(window.LG);

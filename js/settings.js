@@ -1,14 +1,15 @@
 /* 數學實驗室 — 設定（存在瀏覽器 localStorage） */
 'use strict';
 (function (LG) {
-  const KEY = 'mathLab.settings.v1';
+  const KEY = 'mathLab.settings.v2';
 
   const DEFAULTS = {
     time: 45,             // 每關秒數 30～60
-    difficulty: 'normal', // easy / normal / hard
+    difficulty: 'easy',   // easy / normal / hard（預設：簡單）
     penalty: 10,          // 求救卡扣秒
     base: 15,             // 答對基本分
-    units: [5, 6, 7],      // 出題單元（可複選）
+    book: '3A',           // 冊數：1A 一上、3A 二上A版、3B 二上B版
+    units: { '3A': [5, 6, 7] }, // 各冊勾選的出題單元（可複選）
     count: 6,             // 每位同學的總題數（關數）
     dragDist: 'mid',      // 拖曳啟動距離
     tapTol: 'mid',        // 點擊容錯範圍
@@ -25,7 +26,8 @@
     difficulty: v => ['easy', 'normal', 'hard'].includes(v),
     penalty: v => [5, 10, 15].includes(v),
     base: v => [10, 15, 20].includes(v),
-    units: v => Array.isArray(v) && v.length > 0 && v.every(u => Number.isInteger(u) && u >= 1 && u <= 10) && new Set(v).size === v.length,
+    book: v => typeof v === "string" && /^[0-9A-Za-z]{1,8}$/.test(v),
+    units: v => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).every(k => Array.isArray(v[k]) && v[k].every(u => Number.isInteger(u) && u >= 1 && u <= 30) && new Set(v[k]).size === v[k].length),
     count: v => Number.isInteger(v) && v >= 3 && v <= 12,
     dragDist: v => ['small', 'mid', 'large'].includes(v),
     tapTol: v => ['small', 'mid', 'large'].includes(v),

@@ -206,12 +206,13 @@
       this.clearScreen();
       const S = LG.settings.data;
       const n = S.count;
-      const units = S.units.slice().sort((a, b) => a - b);
+      const bk = LG.curBook();
+      const units = LG.curUnits().slice().sort((a, b) => bk.unitIds.indexOf(a) - bk.unitIds.indexOf(b));
       const root = U.el('div', 'idle-screen');
       root.innerHTML = `
         <div class="idle-hero">${IDLE_SVG}</div>
         <div class="idle-title">數學實驗室</div>
-        <div class="idle-sub">${LG.BOOK.name}｜${unitRange(units)}</div>
+        <div class="idle-sub">${bk.label}｜${unitRange(bk, units)}</div>
         <ul class="idle-rules">
           <li>共 <b>${n}</b> 關，每關 <b>${S.time}</b> 秒</li>
           <li>答對得 <b>${S.base}</b> 分＋剩餘秒數</li>
@@ -230,7 +231,7 @@
       // levels：每一關的 { 玩法類別 L、題目 q、標題 meta }，由題庫中樞依勾選單元與總題數排出
       this.cfg = {
         time: S.time, penalty: S.penalty, base: S.base, difficulty: S.difficulty,
-        levels: LG.bank.plan(S.units, S.count, S.difficulty)
+        levels: LG.bank.plan(LG.curBook().id, LG.curUnits(), S.count, S.difficulty)
       };
       if (!this.cfg.levels.length) { this.toast('沒有可用的題目', '請老師到設定頁勾選單元', 'bad'); this.cfg = null; return; }
       this.results = [];
@@ -266,7 +267,7 @@
     buildLevelScreen(meta) {
       const root = U.el('div', 'level lv' + meta.id);
       root.innerHTML = `
-        <div class="lv-title"><span class="lv-name">${meta.name}</span><span class="unit-chip">單元 ${meta.unit}｜${meta.topic}</span></div>
+        <div class="lv-title"><span class="lv-name">${meta.name}</span><span class="unit-chip">${meta.tag}｜${meta.topic}</span></div>
         <div class="lv-q"></div>
         <div class="lv-main"></div>
         <div class="lv-hint"></div>
@@ -500,7 +501,7 @@
         <div class="rs-score"><span class="num">0</span><span class="u">分</span></div>
         <div class="rs-list${n > 8 ? ' many' : ''}">${this.results.map((r, i) => `
           <div class="rs-item ${r.status}">
-            <span class="i">${i + 1}</span><span class="nm"><em class="u" style="color:${U.UNIT_HEX[r.meta.unit]}">${r.meta.unit}</em>${r.meta.name}</span>
+            <span class="i">${i + 1}</span><span class="nm"><em class="u" style="color:${U.UNIT_HEX[r.meta.unit]}">${r.meta.no}</em>${r.meta.name}</span>
             <span class="mk">${MARK[r.status]}${r.status === 'help' ? '<em>求救</em>' : ''}</span>
             <span class="sc">${r.score}</span>
           </div>`).join('')}
@@ -552,17 +553,21 @@
   }
 
   /* 待機畫面副標：[1,2,3,5] → 單元 1～3、5 */
-  function unitRange(units) {
+  function unitRange(bk, units) {
     if (!units.length) return '';
+    // 依課本順序找連續段落；一上用「1-1～2-2」，二上用「單元 5～7」
+    const pos = units.map(u => bk.unitIds.indexOf(u)).sort((a, b) => a - b);
+    const no = p => bk.units[p].no;
     const parts = [];
-    let a = units[0], b = units[0];
-    for (let i = 1; i <= units.length; i++) {
-      const u = units[i];
-      if (u === b + 1) { b = u; continue; }
-      parts.push(a === b ? `${a}` : b === a + 1 ? `${a}、${b}` : `${a}～${b}`);
-      a = b = u;
+    let a = pos[0], b = pos[0];
+    for (let i = 1; i <= pos.length; i++) {
+      const p = pos[i];
+      if (p === b + 1) { b = p; continue; }
+      parts.push(a === b ? no(a) : b === a + 1 ? `${no(a)}、${no(b)}` : `${no(a)}～${no(b)}`);
+      a = b = p;
     }
-    return '單元 ' + parts.join('、');
+    if (pos.length === bk.units.length) return '全冊';
+    return (bk.unitWord ? bk.unitWord + ' ' : '') + parts.join('、');
   }
 
   /* 待機畫面主視覺：y = 2^x 與 y = log₂x 對稱於 y = x */

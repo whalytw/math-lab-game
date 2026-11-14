@@ -12,18 +12,6 @@
   const aPow = (s, e) => (s[1] === 1 ? `${s[0]}` : `\\left(\\frac{${s[0]}}{${s[1]}}\\right)`) + `^{${e}}`;
   const fr = (n, d) => (d === 1 ? `${n}` : (n < 0 ? `-\\frac{${-n}}{${d}}` : `\\frac{${n}}{${d}}`));
 
-  // P(底數位置, x 分子, x 分母, y)：目標點 (x, y) 在 y = a^x 上；M(參考曲線位置)：找對稱於 y 軸者
-  const P = (ai, xn, xd, y) => ({ type: 'point', ai, x: [xn, xd], y });
-  const M = bi => ({ type: 'mirror', bi, ai: 8 - bi });
-  const BANK = {
-    easy: [P(5, 1, 1, 2), P(6, 1, 1, 3), P(7, 1, 1, 4), P(8, 1, 1, 5), P(3, -1, 1, 2), P(2, -1, 1, 3),
-      P(1, -1, 1, 4), P(0, -1, 1, 5), P(5, 2, 1, 4), P(6, 2, 1, 9)],
-    normal: [P(5, 2, 1, 4), P(6, 2, 1, 9), P(3, -2, 1, 4), P(2, -2, 1, 9), P(5, 3, 1, 8), P(3, -3, 1, 8),
-      P(7, 1, 2, 2), M(6), M(5), M(2), M(1)],
-    hard: [P(1, -1, 2, 2), P(7, 3, 2, 8), P(1, -3, 2, 8), P(7, 1, 2, 2), P(2, -2, 1, 9), P(3, -3, 1, 8),
-      M(0), M(1), M(7)]
-  };
-
   function hintFor(xn, xd, y) {
     switch (`${xn}/${xd}`) {
       case '1/1': return `$x=1$ 時 $y=a^{1}=a$，看目標點的 $y$ 坐標`;
@@ -64,7 +52,6 @@
   const COLORS = { ok: '#8cf06a', bad: '#ff5a6a', answer: '#8cf06a' };
 
   class L1 extends LG.LevelBase {
-    static pick(diff) { return build(U.pickFresh('l1' + diff, BANK[diff], e => JSON.stringify(e))); }
 
     constructor(zone, q, scr) {
       super(zone, q, scr);
@@ -260,9 +247,8 @@
   }
 
   L1.meta = { id: 1, name: '細菌培養皿', unit: 5, topic: '指數函數的圖形' };
-  L1.BANK = BANK; L1.build = build; L1.SLOTS = SLOTS;
+  L1.build = build; L1.SLOTS = SLOTS;
   L1.prep = build;
   LG.registerLevel(L1);
   LG.bank.level('grow', L1);
-  LG.bank.add(5, 'grow', BANK);
 })(window.LG);

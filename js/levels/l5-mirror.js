@@ -4,38 +4,6 @@
 (function (LG) {
   const U = LG.util;
 
-  // 曲線：EXP(n,d) 為 y=(n/d)^x；LOG(n,d,kn,kd) 為 y=(kn/kd)·log_{n/d} x（n=10,d=1 為常用對數）
-  const EXP = (n, d) => ({ k: 'exp', n, d: d || 1 });
-  const LOG = (n, d, kn, kd) => ({ k: 'log', n, d: d || 1, kn: kn == null ? 1 : kn, kd: kd || 1 });
-  const Q = (key, src, mirrors, opts, mid) => ({ key, src, mirrors, opts, mid });
-
-  const BANK = {
-    easy: [
-      Q('e1', EXP(2), ['yx'], [LOG(2), LOG(1, 2), EXP(1, 2)]),
-      Q('e2', EXP(10), ['yx'], [LOG(10), LOG(10, 1, -1), EXP(1, 10)]),
-      Q('e3', LOG(10), ['xaxis'], [LOG(10, 1, -1), EXP(10), EXP(1, 10)]),
-      Q('e4', EXP(3), ['yaxis'], [EXP(1, 3), LOG(3), LOG(1, 3)]),
-      Q('e5', EXP(2), ['yaxis'], [EXP(1, 2), LOG(2), LOG(1, 2)]),
-      Q('e6', LOG(2), ['yx'], [EXP(2), EXP(1, 2), LOG(1, 2)])
-    ],
-    normal: [
-      Q('n1', LOG(10, 1, 2), ['xaxis'], [LOG(10, 1, -2), LOG(10, 1, 1, 2), LOG(10, 1, -1, 2)]),
-      Q('n2', LOG(10, 1, -3), ['xaxis'], [LOG(10, 1, 3), LOG(10, 1, 1, 3), LOG(10, 1, -1, 3)]),
-      Q('n3', EXP(1, 2), ['yx'], [LOG(1, 2), LOG(2), EXP(2)]),
-      Q('n4', LOG(3), ['yx'], [EXP(3), EXP(1, 3), LOG(1, 3)]),
-      Q('n5', EXP(1, 4), ['yaxis'], [EXP(4), LOG(4), LOG(1, 4)]),
-      Q('n6', LOG(10, 1, 3), ['xaxis'], [LOG(10, 1, -3), LOG(10, 1, 1, 3), LOG(10, 1, -1, 3)])
-    ],
-    hard: [
-      Q('h1', LOG(2), ['xaxis'], [LOG(1, 2), EXP(1, 2), EXP(2)]),
-      Q('h2', LOG(1, 3), ['yx'], [EXP(1, 3), EXP(3), LOG(3)]),
-      Q('h3', LOG(1, 2), ['xaxis'], [LOG(2), EXP(2), EXP(1, 2)]),
-      Q('h4', EXP(10), ['yx', 'xaxis'], [LOG(10, 1, -1), LOG(10), EXP(1, 10)], LOG(10)),
-      Q('h5', EXP(2), ['yaxis', 'yx'], [LOG(1, 2), LOG(2), EXP(1, 2)], EXP(1, 2)),
-      Q('h6', EXP(3), ['yx', 'xaxis'], [LOG(1, 3), LOG(3), EXP(1, 3)], LOG(3))
-    ]
-  };
-
   const MNAME = { yx: '直線 $y=x$', xaxis: '$x$ 軸', yaxis: '$y$ 軸' };
   const MHINT = {
     yx: '$y=a^{x}$ 與 $y=\\log_a x$ 的圖形對稱於直線 $y=x$',
@@ -92,7 +60,6 @@
   }
 
   class L5 extends LG.LevelBase {
-    static pick(diff) { return build(U.pickFresh('l5' + diff, BANK[diff], e => e.key)); }
 
     constructor(zone, q, scr) {
       super(zone, q, scr);
@@ -278,9 +245,8 @@
   }
 
   L5.meta = { id: 5, name: '鏡像傳送門', unit: 7, topic: '對數函數的圖形' };
-  L5.BANK = BANK; L5.build = build; L5.cfun = cfun; L5.ctex = ctex; L5.REFL = REFL;
+  L5.build = build; L5.cfun = cfun; L5.ctex = ctex; L5.REFL = REFL;
   L5.prep = build;
   LG.registerLevel(L5);
   LG.bank.level('mirror', L5);
-  LG.bank.add(7, 'mirror', BANK);
 })(window.LG);

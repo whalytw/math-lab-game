@@ -1,25 +1,10 @@
 /* 數學實驗室 — 題庫中樞
-   題目（依單元、玩法登記）和玩法（關卡畫面）分開：
-   老師在設定頁勾選單元、設定總題數，開始挑戰時由這裡排出每一關要用的「玩法＋題目」。 */
+   題目（依課本、單元、玩法登記）和玩法（關卡畫面）分開：
+   老師在設定頁選冊數、勾選單元、設定總題數，開始挑戰時由這裡排出每一關要用的「玩法＋題目」。
+   課本與單元清單由各題庫檔用 LG.bank.book() 登記（見 js/banks/）。 */
 'use strict';
 (function (LG) {
   const U = LG.util;
-
-  /* 課本：3A（龍騰）高二上 */
-  LG.BOOK = { id: '3A', name: '數學 3A（龍騰）' };
-  LG.UNITS = {
-    1: { name: '弧度量', short: '弧度量' },
-    2: { name: '三角函數的圖形', short: '三角函數圖形' },
-    3: { name: '三角的和差角公式', short: '和差角公式' },
-    4: { name: '正餘弦的疊合', short: '疊合' },
-    5: { name: '指數函數', short: '指數函數' },
-    6: { name: '對數與對數律', short: '對數律' },
-    7: { name: '對數函數', short: '對數函數' },
-    8: { name: '平面向量', short: '平面向量' },
-    9: { name: '平面向量的運算', short: '向量運算' },
-    10: { name: '二元一次聯立方程式', short: '聯立方程式' }
-  };
-  LG.UNIT_IDS = Object.keys(LG.UNITS).map(Number);
 
   /* 玩法：need = 一關要用幾個題庫項目 */
   const MECH = {
@@ -37,31 +22,65 @@
 
   const B = { items: [], levels: {} };
   LG.bank = B;
+  LG.BOOKS = {};
 
   /* 關卡類別登記自己負責的玩法 */
   B.level = (mech, L) => { B.levels[mech] = L; };
 
-  /* 登記題目：list 為陣列（不分難度）或 { easy, normal, hard } */
-  B.add = (unit, mech, list) => {
-    const put = (arr, d) => arr.forEach((it, i) => {
-      B.items.push({ unit, mech, d, key: `${unit}|${mech}|${d || 'a'}|${i}`, data: it });
-    });
-    if (Array.isArray(list)) put(list, null);
-    else Object.keys(list).forEach(d => put(list[d], d));
+  /* 登記一冊課本：
+     { label: '二上A版', name: '數學 3A（龍騰）', order,
+       units: [{ id, no: '5', tag: '單元 5', name: '指數函數', curve }],
+       groups: [['指對數 5～7', [5, 6, 7]], ...] } */
+  B.book = (id, meta) => {
+    const bk = Object.assign({ id, groups: [] }, meta);
+    bk.unitMap = {};
+    bk.units.forEach((u, i) => { u.idx = i + 1; bk.unitMap[u.id] = u; });
+    bk.unitIds = bk.units.map(u => u.id);
+    LG.BOOKS[id] = bk;
+    return bk;
+  };
+  B.books = () => Object.values(LG.BOOKS).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  /* 目前設定頁選的課本（找不到時用第一冊） */
+  LG.curBook = () => LG.BOOKS[LG.settings.data.book] || B.books()[0];
+  /* 目前課本中勾選的單元 */
+  LG.curUnits = () => {
+    const bk = LG.curBook();
+    const sel = (LG.settings.data.units[bk.id] || []).filter(u => bk.unitMap[u]);
+    return sel.length ? sel : bk.unitIds.slice();
   };
 
-  /* 某單元某玩法、某難度可用的題目；指定難度的題目不夠時改用全部難度 */
-  B.pool = (unit, mech, diff) => {
-    const all = B.items.filter(it => it.unit === unit && it.mech === mech);
+  /* 題庫檔用：const { add, copy } = LG.bank.forBook('3A') */
+  B.forBook = book => ({
+    /* 登記題目：list 為陣列（不分難度）或 { easy, normal, hard } */
+    add(unit, mech, list) {
+      const put = (arr, d) => arr.forEach((it, i) => {
+        B.items.push({ book, unit, mech, d, key: `${book}|${unit}|${mech}|${d || 'a'}|${i}`, data: it });
+      });
+      if (Array.isArray(list)) put(list, null);
+      else Object.keys(list).forEach(d => put(list[d], d));
+    },
+    /* 沿用其他冊的題目（同一份資料，不另外複製）；keep(題目資料, 玩法) 回傳 false 的題目不沿用 */
+    copy(fromBook, fromUnit, toUnit, keep) {
+      B.items.filter(it => it.book === fromBook && it.unit === fromUnit).forEach(it => {
+        if (keep && !keep(it.data, it.mech)) return;
+        B.items.push({ book, unit: toUnit, mech: it.mech, d: it.d, key: `${book}|${toUnit}|${it.key}`, data: it.data });
+      });
+    }
+  });
+
+  /* 某冊某單元某玩法、某難度可用的題目；指定難度的題目不夠時改用全部難度 */
+  B.pool = (book, unit, mech, diff) => {
+    const all = B.items.filter(it => it.book === book && it.unit === unit && it.mech === mech);
     const fit = all.filter(it => !it.d || it.d === diff);
     return fit.length >= MECH[mech].need ? fit : all;
   };
 
   /* 設定頁用：各單元題數（是非、配對以「題」計，即敘述數、算式數） */
-  B.count = unit => {
+  B.count = (book, unit) => {
     const out = { total: 0, by: {} };
     B.items.forEach(it => {
-      if (it.unit !== unit) return;
+      if (it.book !== book || it.unit !== unit) return;
       out.total++;
       out.by[it.mech] = (out.by[it.mech] || 0) + 1;
     });
@@ -83,13 +102,14 @@
   }
 
   /* 依玩法組出一關的題目 */
-  function compose(unit, mech, diff, used) {
+  function compose(book, unit, mech, diff, used) {
     const L = B.levels[mech];
     if (!L) return null;
     const need = MECH[mech].need;
-    const pool = B.pool(unit, mech, diff).filter(it => !used.has(it.key));
+    const full = B.pool(book, unit, mech, diff);
+    const pool = full.filter(it => !used.has(it.key));
     if (pool.length < need) return null;
-    const bucket = `${unit}|${mech}|${diff}`;
+    const bucket = `${book}|${unit}|${mech}|${diff}`;
     const order = freshOrder(bucket, pool);
     let chosen;
     if (mech === 'match') {
@@ -105,16 +125,22 @@
     chosen.forEach(c => used.add(c.key));
     remember(bucket, chosen.map(c => c.key), pool.length, need);
     const datas = chosen.map(c => c.data);
-    let q;
-    if (L.compose) q = L.compose(datas, { unit, diff, pool: B.pool(unit, mech, diff).map(it => it.data) });
-    else q = L.prep ? L.prep(datas[0]) : datas[0];
-    return q;
+    if (L.compose) return L.compose(datas, { unit, diff, pool: full.map(it => it.data) });
+    return L.prep ? L.prep(datas[0]) : datas[0];
   }
 
+  /* 關卡標題資訊 */
+  B.meta = (L, book, unit) => {
+    const u = LG.BOOKS[book].unitMap[unit];
+    return { id: L.meta.id, name: L.meta.name, book, unit: u.idx, no: u.no, tag: u.tag, topic: u.name, curve: u.curve };
+  };
+
   /* 一位同學的整場挑戰：回傳 [{ mech, unit, L, q, meta }] */
-  B.plan = (units, count, diff) => {
-    units = units.filter(u => LG.UNITS[u]);
-    if (!units.length) units = LG.UNIT_IDS.slice();
+  B.plan = (book, units, count, diff) => {
+    const bk = LG.BOOKS[book];
+    if (!bk) return [];
+    units = units.filter(u => bk.unitMap[u]);
+    if (!units.length) units = bk.unitIds.slice();
     // 1. 每關的單元：平均分配後打亂，盡量不連續同一單元
     let seq = [];
     const base = U.shuffle(units);
@@ -127,7 +153,7 @@
     }
     seq = best;
     // 最後一關盡量排「有魔王題」的單元
-    const hasBoss = u => B.pool(u, 'boss', diff).length > 0;
+    const hasBoss = u => B.pool(book, u, 'boss', diff).length > 0;
     if (seq.length > 1 && !hasBoss(seq[seq.length - 1])) {
       const j = seq.map((u, k) => k).reverse().find(k => k < seq.length - 1 && hasBoss(seq[k]));
       if (j != null) [seq[j], seq[seq.length - 1]] = [seq[seq.length - 1], seq[j]];
@@ -144,7 +170,7 @@
     });
     function pickRound(unit, i) {
       const avail = Object.keys(MECH).filter(m => B.levels[m] &&
-        B.pool(unit, m, diff).filter(it => !used.has(it.key)).length >= MECH[m].need);
+        B.pool(book, unit, m, diff).filter(it => !used.has(it.key)).length >= MECH[m].need);
       let order;
       // 是非題（觀念題）在中間也會輪到，但每人最多約 1/4 的關數
       const tfOk = (mechUse.tf || 0) < Math.ceil(count / 4);
@@ -156,15 +182,14 @@
       order = order.filter(m => avail.includes(m));
       let r = null;
       for (const mech of order) {
-        const q = compose(unit, mech, diff, used);
+        const q = compose(book, unit, mech, diff, used);
         if (q) { r = { mech, unit, q }; break; }
       }
       if (!r) return false;
       mechUse[r.mech] = (mechUse[r.mech] || 0) + 1;
       prev = r.mech;
-      const L = B.levels[r.mech];
-      r.L = L;
-      r.meta = { id: L.meta.id, name: L.meta.name, unit: r.unit, topic: LG.UNITS[r.unit].name };
+      r.L = B.levels[r.mech];
+      r.meta = B.meta(r.L, book, r.unit);
       rounds.push(r);
       return true;
     }

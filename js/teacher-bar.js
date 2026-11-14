@@ -32,7 +32,7 @@
     bar.innerHTML = `
       <div class="tb-brand">
         <svg class="tb-logo" viewBox="0 0 40 40" aria-hidden="true"><path d="M4 36 L36 4" class="l1"/><path d="M4 30 C14 30 20 26 26 4" class="l2"/><path d="M10 36 C10 26 14 20 36 14" class="l3"/></svg>
-        <span class="nm">數學實驗室</span><span class="sub">${LG.BOOK.name} 複習挑戰</span>
+        <span class="nm">數學實驗室</span><span class="sub"></span>
       </div>
       <div class="tb-info"></div>
       <div class="tb-btn" id="btn-fs"><span class="ic">⛶</span><span class="lb">全螢幕</span><i class="hold"></i></div>
@@ -60,8 +60,11 @@
 
   TB.refresh = () => {
     const d = LG.settings.data;
-    const us = d.units.slice().sort((a, b) => a - b).join("、");
-    TB.info.textContent = `單元 ${us}　難度 ${DIFF[d.difficulty]}　每關 ${d.time} 秒　每人 ${d.count} 關`;
+    const bk = LG.curBook();
+    const us = LG.curUnits().map(u => bk.unitMap[u].no).join('、');
+    const sub = document.querySelector('#teacher-bar .tb-brand .sub');
+    if (sub) sub.textContent = `${bk.label}（${bk.name}）複習挑戰`;
+    TB.info.textContent = `${bk.label}｜${bk.unitWord || ''}${bk.unitWord ? ' ' : ''}${us}　難度 ${DIFF[d.difficulty]}　每關 ${d.time} 秒　每人 ${d.count} 關`;
   };
 
   LG.teacherBar = TB;

@@ -4,124 +4,6 @@
 (function (LG) {
   const U = LG.util;
 
-  // opts 第一個是正解；verify 只給自動測試用
-  const Q = (key, prompt, opts, hint, explain, verify) => ({ key, prompt, opts, hint, explain, verify });
-  const BANK = {
-    easy: [
-      Q('e1', '解方程式 $2^{x+1}=16$', ['$x=3$', '$x=4$', '$x=7$', '$x=8$'],
-        '把 $16$ 寫成 $2^{4}$，再比較指數',
-        '$2^{x+1}=2^{4}\\Rightarrow x+1=4\\Rightarrow x=3$',
-        { t: 'eq', f: x => Math.pow(2, x + 1) - 16, roots: [3] }),
-      Q('e2', '解方程式 $\\left(\\dfrac12\\right)^{x}=8$', ['$x=-3$', '$x=3$', '$x=-\\dfrac13$', '$x=4$'],
-        '$8=2^{3}=\\left(\\frac12\\right)^{-3}$',
-        '$\\left(\\frac12\\right)^{x}=\\left(\\frac12\\right)^{-3}\\Rightarrow x=-3$',
-        { t: 'eq', f: x => Math.pow(0.5, x) - 8, roots: [-3] }),
-      Q('e3', '解方程式 $3^{x}=\\dfrac{1}{9}$', ['$x=-2$', '$x=2$', '$x=-\\dfrac12$', '$x=-3$'],
-        '$\\frac19=\\frac{1}{3^{2}}=3^{-2}$',
-        '$3^{x}=3^{-2}\\Rightarrow x=-2$',
-        { t: 'eq', f: x => Math.pow(3, x) - 1 / 9, roots: [-2] }),
-      Q('e4', '解不等式 $2^{x}<8$', ['$x<3$', '$x>3$', '$x<4$', '$0<x<3$'],
-        '$8=2^{3}$；底數 $2>1$，不等號方向不變',
-        '$2^{x}<2^{3}$，底數大於 1，所以 $x<3$',
-        { t: 'ineq', p: x => Math.pow(2, x) < 8, a: x => x < 3 }),
-      Q('e5', '解不等式 $\\left(\\dfrac13\\right)^{x}>\\dfrac19$', ['$x<2$', '$x>2$', '$x<-2$', '$x>-2$'],
-        '$\\frac19=\\left(\\frac13\\right)^{2}$；底數小於 1，不等號要變向',
-        '$\\left(\\frac13\\right)^{x}>\\left(\\frac13\\right)^{2}$，底數 $0<\\frac13<1$，所以 $x<2$',
-        { t: 'ineq', p: x => Math.pow(1 / 3, x) > 1 / 9, a: x => x < 2 }),
-      Q('e6', '解方程式 $9^{x}=27$', ['$x=\\dfrac32$', '$x=3$', '$x=\\dfrac23$', '$x=\\dfrac13$'],
-        '化成同底數：$9=3^{2}$、$27=3^{3}$',
-        '$3^{2x}=3^{3}\\Rightarrow 2x=3\\Rightarrow x=\\frac32$',
-        { t: 'eq', f: x => Math.pow(9, x) - 27, roots: [1.5] }),
-      Q('e7', '碘 131 的半衰期是 8 天。經過 24 天後，剩下原來的幾分之幾？', ['$\\dfrac18$', '$\\dfrac13$', '$\\dfrac1{16}$', '$\\dfrac1{24}$'],
-        '24 天是 3 個半衰期：$\\left(\\frac12\\right)^{\\frac{24}{8}}$',
-        '$\\left(\\frac12\\right)^{\\frac{24}{8}}=\\left(\\frac12\\right)^{3}=\\frac18$',
-        { t: 'val', got: Math.pow(0.5, 24 / 8), want: 1 / 8 }),
-      Q('e8', '大腸桿菌每 30 分鐘數量變為 2 倍。經過 2 小時，數量變為原來的幾倍？', ['$16$ 倍', '$4$ 倍', '$8$ 倍', '$32$ 倍'],
-        '2 小時是 4 個 30 分鐘',
-        '$2^{\\frac{120}{30}}=2^{4}=16$',
-        { t: 'val', got: Math.pow(2, 120 / 30), want: 16 })
-    ],
-    normal: [
-      Q('n1', '解方程式 $2^{\\frac{x}{30}}=1024$', ['$x=300$', '$x=10$', '$x=30$', '$x=320$'],
-        '$1024=2^{10}$',
-        '$2^{\\frac{x}{30}}=2^{10}\\Rightarrow\\frac{x}{30}=10\\Rightarrow x=300$',
-        { t: 'eq', f: x => x / 30 - 10, roots: [300], range: [-2000, 2000] }),
-      Q('n2', '解方程式 $3^{x}=3\\sqrt{3}$', ['$x=\\dfrac32$', '$x=3$', '$x=\\dfrac12$', '$x=\\dfrac23$'],
-        '$3\\sqrt3=3^{1}\\times3^{\\frac12}$',
-        '$3\\sqrt3=3^{\\frac32}\\Rightarrow x=\\frac32$',
-        { t: 'eq', f: x => Math.pow(3, x) - 3 * Math.sqrt(3), roots: [1.5] }),
-      Q('n3', '解方程式 $4^{x}=8$', ['$x=\\dfrac32$', '$x=2$', '$x=\\dfrac23$', '$x=\\dfrac12$'],
-        '$4=2^{2}$、$8=2^{3}$',
-        '$2^{2x}=2^{3}\\Rightarrow x=\\frac32$',
-        { t: 'eq', f: x => Math.pow(4, x) - 8, roots: [1.5] }),
-      Q('n4', '解不等式 $(0.7)^{x^{2}}>(0.49)^{x}$', ['$0<x<2$', '$x<0$ 或 $x>2$', '$x>2$', '$x<2$'],
-        '$0.49=(0.7)^{2}$；底數 $0.7<1$，函數遞減，不等號要變向',
-        '$(0.7)^{x^{2}}>(0.7)^{2x}\\Rightarrow x^{2}<2x\\Rightarrow 0<x<2$',
-        { t: 'ineq', p: x => Math.pow(0.7, x * x) > Math.pow(0.49, x), a: x => x > 0 && x < 2 }),
-      Q('n5', '解不等式 $\\left(\\dfrac12\\right)^{x}>4$', ['$x<-2$', '$x>-2$', '$x>2$', '$x<2$'],
-        '$4=\\left(\\frac12\\right)^{-2}$；底數小於 1，不等號要變向',
-        '$\\left(\\frac12\\right)^{x}>\\left(\\frac12\\right)^{-2}\\Rightarrow x<-2$',
-        { t: 'ineq', p: x => Math.pow(0.5, x) > 4, a: x => x < -2 }),
-      Q('n6', '解不等式 $3^{2x+1}>\\dfrac13$', ['$x>-1$', '$x<-1$', '$x>0$', '$x>-2$'],
-        '$\\frac13=3^{-1}$；底數 $3>1$',
-        '$3^{2x+1}>3^{-1}\\Rightarrow 2x+1>-1\\Rightarrow x>-1$',
-        { t: 'ineq', p: x => Math.pow(3, 2 * x + 1) > 1 / 3, a: x => x > -1 }),
-      Q('n7', '碘 131 的半衰期是 8 天。食材含量 3200 要降到 100 以下，至少要超過幾天？', ['$40$ 天', '$32$ 天', '$48$ 天', '$25$ 天'],
-        '$\\frac{100}{3200}=\\frac{1}{32}=\\left(\\frac12\\right)^{5}$',
-        '$\\left(\\frac12\\right)^{\\frac{x}{8}}<\\left(\\frac12\\right)^{5}\\Rightarrow\\frac{x}{8}>5\\Rightarrow x>40$',
-        { t: 'ineq', p: x => 3200 * Math.pow(0.5, x / 8) < 100, a: x => x > 40, range: [0, 300] }),
-      Q('n8', '電晶體數目每 2 年變為 2 倍。若 $t$ 年後變為原來的 $a^{t}$ 倍，則 $a=$？', ['$a=\\sqrt{2}$', '$a=2$', '$a=4$', '$a=\\dfrac12$'],
-        '$t$ 年有 $\\frac{t}{2}$ 個「2 年」：變為 $2^{\\frac{t}{2}}$ 倍',
-        '$2^{\\frac{t}{2}}=\\left(2^{\\frac12}\\right)^{t}\\Rightarrow a=\\sqrt2$',
-        { t: 'val', got: Math.pow(2, 1 / 2), want: Math.SQRT2 }),
-      Q('n9', '解方程式 $25^{x-1}=5$', ['$x=\\dfrac32$', '$x=\\dfrac12$', '$x=2$', '$x=\\dfrac52$'],
-        '$25=5^{2}$',
-        '$5^{2x-2}=5^{1}\\Rightarrow 2x-2=1\\Rightarrow x=\\frac32$',
-        { t: 'eq', f: x => Math.pow(25, x - 1) - 5, roots: [1.5] }),
-      Q('n10', '碳 14 的半衰期約 5700 年。某化石的碳 14 剩下原來的 $\\dfrac18$，大約是幾年前的生物？', ['$17100$ 年', '$11400$ 年', '$22800$ 年', '$5700$ 年'],
-        '$\\frac18=\\left(\\frac12\\right)^{3}$：經過 3 個半衰期',
-        '$\\left(\\frac12\\right)^{\\frac{x}{5700}}=\\left(\\frac12\\right)^{3}\\Rightarrow x=3\\times5700=17100$',
-        { t: 'eq', f: x => x / 5700 - 3, roots: [17100], range: [0, 60000] }),
-      Q('n11', '解不等式 $\\left(\\dfrac45\\right)^{x+2}>1$', ['$x<-2$', '$x>-2$', '$x>2$', '$x<2$'],
-        '$1=\\left(\\frac45\\right)^{0}$；底數小於 1，不等號要變向',
-        '$\\left(\\frac45\\right)^{x+2}>\\left(\\frac45\\right)^{0}\\Rightarrow x+2<0\\Rightarrow x<-2$',
-        { t: 'ineq', p: x => Math.pow(0.8, x + 2) > 1, a: x => x < -2 })
-    ],
-    hard: [
-      Q('h1', '解方程式 $4^{x}-7\\cdot2^{x}-8=0$', ['$x=3$', '$x=8$ 或 $x=-1$', '$x=8$', '$x=3$ 或 $x=-1$'],
-        '設 $t=2^{x}>0$，得 $t^{2}-7t-8=0$',
-        '$(t-8)(t+1)=0$，因為 $t=2^{x}>0$，只取 $t=8$，所以 $x=3$',
-        { t: 'eq', f: x => Math.pow(4, x) - 7 * Math.pow(2, x) - 8, roots: [3] }),
-      Q('h2', '解方程式 $9^{x}+3^{x+1}-18=0$', ['$x=1$', '$x=1$ 或 $x=-6$', '$x=3$', '$x=3$ 或 $x=-6$'],
-        '設 $t=3^{x}>0$，得 $t^{2}+3t-18=0$',
-        '$(t+6)(t-3)=0$，只取 $t=3$，所以 $x=1$',
-        { t: 'eq', f: x => Math.pow(9, x) + Math.pow(3, x + 1) - 18, roots: [1] }),
-      Q('h3', '解不等式 $4^{x}-3\\cdot2^{x}+2<0$', ['$0<x<1$', '$1<x<2$', '$x<0$ 或 $x>1$', '$x>1$'],
-        '設 $t=2^{x}$，得 $(t-1)(t-2)<0$',
-        '$1<2^{x}<2\\Rightarrow 0<x<1$',
-        { t: 'ineq', p: x => Math.pow(4, x) - 3 * Math.pow(2, x) + 2 < 0, a: x => x > 0 && x < 1 }),
-      Q('h4', '解不等式 $4^{x}-2^{x+1}-8>0$', ['$x>2$', '$x>4$', '$x<-2$ 或 $x>4$', '$x<-1$ 或 $x>2$'],
-        '設 $t=2^{x}>0$，得 $t^{2}-2t-8>0$',
-        '$(t-4)(t+2)>0$ 且 $t>0$，所以 $t>4$，即 $2^{x}>2^{2}$，$x>2$',
-        { t: 'ineq', p: x => Math.pow(4, x) - Math.pow(2, x + 1) - 8 > 0, a: x => x > 2 }),
-      Q('h5', '解不等式 $(0.3)^{x^{2}-x}>(0.09)^{2x+3}$', ['$-1<x<6$', '$x<-1$ 或 $x>6$', '$-6<x<1$', '$x<-6$ 或 $x>1$'],
-        '$0.09=(0.3)^{2}$；底數小於 1，不等號要變向',
-        '$x^{2}-x<4x+6\\Rightarrow x^{2}-5x-6<0\\Rightarrow -1<x<6$',
-        { t: 'ineq', p: x => (x * x - x) * Math.log(0.3) > (2 * x + 3) * Math.log(0.09), a: x => x > -1 && x < 6 }),
-      Q('h6', '解方程式 $2^{3x^{2}}=4\\cdot2^{5x}$', ['$x=2$ 或 $x=-\\dfrac13$', '$x=2$', '$x=-2$ 或 $x=\\dfrac13$', '$x=\\dfrac13$'],
-        '$4\\cdot2^{5x}=2^{5x+2}$，比較兩邊的指數',
-        '$3x^{2}=5x+2\\Rightarrow(3x+1)(x-2)=0\\Rightarrow x=2$ 或 $x=-\\frac13$',
-        { t: 'eq', f: x => 3 * x * x - (5 * x + 2), roots: [2, -1 / 3] }),
-      Q('h7', '甲、乙兩種放射性物質起初質量相同，甲的半衰期是 30 小時。120 小時後甲的質量是乙的 2 倍，乙的半衰期是幾小時？', ['$24$ 小時', '$20$ 小時', '$40$ 小時', '$60$ 小時'],
-        '120 小時後甲剩 $\\left(\\frac12\\right)^{4}$，所以乙剩 $\\left(\\frac12\\right)^{5}$',
-        '乙經過 5 個半衰期：$\\frac{120}{5}=24$ 小時',
-        { t: 'val', got: Math.pow(0.5, 120 / 30) / Math.pow(0.5, 120 / 24), want: 2 }),
-      Q('h8', '碳 14 的半衰期約 5700 年。某雕像的碳 14 少於原來的 $\\dfrac1{16}$，它至少是幾年前的古物？', ['$22800$ 年', '$17100$ 年', '$11400$ 年', '$28500$ 年'],
-        '$\\frac1{16}=\\left(\\frac12\\right)^{4}$；底數小於 1，不等號要變向',
-        '$\\left(\\frac12\\right)^{\\frac{x}{5700}}<\\left(\\frac12\\right)^{4}\\Rightarrow\\frac{x}{5700}>4\\Rightarrow x>22800$',
-        { t: 'ineq', p: x => Math.pow(0.5, x / 5700) < 1 / 16, a: x => x > 22800, range: [0, 100000] })
-    ]
-  };
 
   const WIRE = ['#ff5d5d', '#4da3ff', '#ffd34d', '#5ee08a'];
 
@@ -141,7 +23,6 @@
   };
 
   class L2 extends LG.LevelBase {
-    static pick(diff) { return U.pickFresh('l2' + diff, BANK[diff], q => q.key); }
 
     constructor(zone, q, scr) {
       super(zone, q, scr);
@@ -364,8 +245,6 @@
   }
 
   L2.meta = { id: 2, name: '拆彈小組', unit: 5, topic: '指數方程式與不等式' };
-  L2.BANK = BANK;
   LG.registerLevel(L2);
   LG.bank.level('mc', L2);
-  LG.bank.add(5, 'mc', BANK);
 })(window.LG);

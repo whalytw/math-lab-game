@@ -228,6 +228,7 @@
      { line: [a, b, c] }       直線 ax + by = c
      { vec: [x0, y0, x1, y1] } 向量（箭頭）
      { pt: [x, y] }            點
+     { circle: [h, k, r] }     圓（圓心 (h,k)、半徑 r）
      { label: 'A', at: [x, y] } 文字
      每個圖形可帶 color / width / dash；style 為整組的預設值 */
   Graph2D.prototype.shapes = function (list, style) {
@@ -236,7 +237,11 @@
     for (const sh of list) {
       const o = Object.assign({}, style || {}, sh.style || {});
       if (sh.color) o.color = sh.color;
-      if (sh.fn) {
+      if (sh.circle) {
+        const [h, k, r] = sh.circle, pts = [];
+        for (let i = 0; i <= 240; i++) { const t = i / 240 * Math.PI * 2; pts.push([h + r * Math.cos(t), k + r * Math.sin(t)]); }
+        this.polyline(pts, o);
+      } else if (sh.fn) {
         const f = sh.fn, x0 = v.x0 - 0.5, x1 = v.x1 + 0.5;
         this.polyline(Graph2D.sample(f, x0, x1, 600), o);
       } else if (sh.line) {

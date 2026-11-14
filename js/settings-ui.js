@@ -3,7 +3,7 @@
 (function (LG) {
   const U = LG.util, S = LG.settings, I = LG.input;
   const UI = {};
-  let root, segs = [], keypad, touchTest, levelBtns = [], estEl, pinEl, flashEl, classEl, unitSumEl;
+  let root, segs = [], keypad, touchTest, levelBtns = [], estEl, pinEl, flashEl, classEl, unitSumEl, bookSel, unitRow;
 
   /* ---------- 設定頁 ---------- */
   function seg(label, key, opts, note) {
@@ -70,33 +70,23 @@
       seg('求救卡扣秒', 'penalty', [5, 10, 15].map(v => ({ v, t: v + ' 秒' }))),
       seg('答對基本分', 'base', [10, 15, 20].map(v => ({ v, t: v + ' 分' })))
     );
-    // ---- 出題範圍：總題數＋勾選單元 ----
+    // ---- 出題範圍：冊數（下拉選單）＋總題數＋勾選單元 ----
     const cu = root.querySelector('.c-units');
+    const bkRow = U.el('div', 'st-row');
+    bkRow.innerHTML = `<div class="st-label">冊數<small>換冊後，下方單元清單會跟著換</small></div>
+      <select class="bk-sel">${LG.bank.books().map(b => `<option value="${b.id}">${b.label}（${b.name}）</option>`).join('')}</select>`;
+    bookSel = bkRow.querySelector('.bk-sel');
+    bookSel.addEventListener('change', () => {
+      S.set('book', bookSel.value);
+      buildUnits();
+      render();
+      flash(`已切換為${LG.curBook().label}`);
+    });
+    cu.appendChild(bkRow);
     cu.appendChild(seg('每位同學總題數', 'count', [3, 4, 5, 6, 7, 8, 9, 10, 12].map(v => ({ v, t: String(v) })), '勾選的單元混合出題，每人只做這麼多關'));
-    const lv = U.el('div', 'st-row');
-    lv.innerHTML = `<div class="st-label">出題單元<small>${LG.BOOK.name}，可複選，至少保留一個</small></div>
-      <div class="seg u-quick"></div><div class="lv-grid u-grid"></div><div class="u-sum"></div>`;
-    const quick = lv.querySelector('.u-quick');
-    [['全選', LG.UNIT_IDS], ['三角 1～4', [1, 2, 3, 4]], ['指對數 5～7', [5, 6, 7]], ['向量 8～10', [8, 9, 10]]].forEach(([t, us]) => {
-      quick.appendChild(button(t, () => { S.set('units', us.slice()); render(); }, 'seg-like'));
-    });
-    const grid = lv.querySelector('.u-grid');
-    unitSumEl = lv.querySelector('.u-sum');
-    levelBtns = LG.UNIT_IDS.map(u => {
-      const c = LG.bank.count(u);
-      const b = U.el('div', 'lv-tg', `<b style="color:${U.UNIT_HEX[u]}">${u}</b><span>${LG.UNITS[u].name}</span><small>題庫 ${c.total} 題・是非 ${c.by.tf || 0}</small>`);
-      b.dataset.u = String(u);
-      I.onTap(b, () => {
-        const cur = S.data.units.slice();
-        const next = cur.includes(u) ? cur.filter(x => x !== u) : cur.concat([u]).sort((a, z) => a - z);
-        if (!next.length) { flash('至少要保留一個單元'); return; }
-        S.set('units', next);
-        render();
-      });
-      grid.appendChild(b);
-      return b;
-    });
-    cu.appendChild(lv);
+    unitRow = U.el('div', 'st-row');
+    cu.appendChild(unitRow);
+    buildUnits();
 
     const ct = root.querySelector('.c-touch');
     ct.append(
@@ -143,14 +133,50 @@
     ca.appendChild(df);
   }
 
+  /* 依目前的冊數建立單元勾選清單 */
+  function setUnits(list) {
+    const bk = LG.curBook();
+    const next = Object.assign({}, S.data.units);
+    next[bk.id] = bk.unitIds.filter(u => list.includes(u));
+    S.set('units', next);
+  }
+
+  function buildUnits() {
+    const bk = LG.curBook();
+    unitRow.innerHTML = `<div class="st-label">出題單元<small>${bk.label}（${bk.name}），可複選，至少保留一個</small></div>
+      <div class="seg u-quick"></div><div class="lv-grid u-grid"></div><div class="u-sum"></div>`;
+    const quick = unitRow.querySelector('.u-quick');
+    [['全選', bk.unitIds]].concat(bk.groups || []).forEach(([t, us]) => {
+      quick.appendChild(button(t, () => { setUnits(us); render(); }, 'seg-like'));
+    });
+    const grid = unitRow.querySelector('.u-grid');
+    unitSumEl = unitRow.querySelector('.u-sum');
+    levelBtns = bk.units.map(un => {
+      const c = LG.bank.count(bk.id, un.id);
+      const b = U.el('div', 'lv-tg', `<b style="color:${U.UNIT_HEX[un.idx]}">${un.no}</b><span>${un.name}</span><small>題庫 ${c.total} 題・是非 ${c.by.tf || 0}</small>`);
+      b.dataset.u = String(un.id);
+      I.onTap(b, () => {
+        const cur = LG.curUnits();
+        const next = cur.includes(un.id) ? cur.filter(x => x !== un.id) : cur.concat([un.id]);
+        if (!next.length) { flash('至少要保留一個單元'); return; }
+        setUnits(next);
+        render();
+      });
+      grid.appendChild(b);
+      return b;
+    });
+  }
+
   function render() {
     segs.forEach(({ row, key }) => {
       row.querySelectorAll('.seg-b').forEach(b => b.classList.toggle('on', b.dataset.v === String(S.data[key])));
     });
-    levelBtns.forEach(b => b.classList.toggle('on', S.data.units.includes(Number(b.dataset.u))));
-    const us = S.data.units.slice().sort((a, z) => a - z);
-    const tot = us.reduce((s, u) => s + LG.bank.count(u).total, 0);
-    unitSumEl.innerHTML = `已選 <b>${us.length}</b> 個單元（${us.join('、')}），題庫共 <b>${tot}</b> 題；每位同學從中混合抽 <b>${S.data.count}</b> 關`;
+    const bk = LG.curBook();
+    if (bookSel.value !== bk.id) { bookSel.value = bk.id; buildUnits(); }
+    const us = LG.curUnits();
+    levelBtns.forEach(b => b.classList.toggle('on', us.includes(Number(b.dataset.u))));
+    const tot = us.reduce((s, u) => s + LG.bank.count(bk.id, u).total, 0);
+    unitSumEl.innerHTML = `已選 <b>${us.length}</b> 個單元（${us.map(u => bk.unitMap[u].no).join('、')}），題庫共 <b>${tot}</b> 題；每位同學從中混合抽 <b>${S.data.count}</b> 關`;
     classEl.textContent = String(S.data.classSize);
     const e = estimate();
     const mmss = s => `${Math.floor(s / 60)} 分 ${String(Math.round(s % 60)).padStart(2, '0')} 秒`;

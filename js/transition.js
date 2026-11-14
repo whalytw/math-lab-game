@@ -50,10 +50,10 @@
       } else {
         const m = info.meta;
         this.color = U.UNIT_HEX[m.unit];
-        this.curve = m.unit === 5 ? 'exp' : m.unit === 6 ? 'log' : m.unit === 7 ? 'mirror' : m.unit <= 4 ? 'sin' : 'vec';
+        this.curve = m.curve || "all";
         this.big.innerHTML = `<span class="pre">第</span><span class="n">${info.num}</span><span class="post">關</span>`;
         this.name.textContent = m.name;
-        this.unit.textContent = `單元 ${m.unit}｜${m.topic}`;
+        this.unit.textContent = `${m.tag}｜${m.topic}`;
       }
       this.el.style.setProperty('--tc', this.color);
       this.el.classList.remove('run');
@@ -114,6 +114,11 @@
         curves.push({ f: x => 0.55 * x, x0: xL, x1: xR, color: this.color });
         curves.push({ f: x => -1.4 * x, x0: Math.max(xL, -(H - oy) / unit / 1.4), x1: Math.min(xR, oy / unit / 1.4), color: '#f2f6fb' });
       }
+      if (this.curve === 'poly') curves.push({ f: x => 0.28 * x * (x - 2) * (x + 2.4), x0: xL, x1: xR, color: this.color });
+      if (this.curve === 'circle') {
+        curves.push({ param: t => [0.6 + 1.6 * Math.cos(t), 0.4 + 1.6 * Math.sin(t)], x0: 0, x1: Math.PI * 2, color: this.color });
+        curves.push({ f: x => 0.6 * x + 1.4, x0: xL, x1: xR, color: '#f2f6fb' });
+      }
       if (this.curve === 'mirror' || this.curve === 'all') {
         g.globalAlpha = fade * 0.55;
         g.setLineDash([10 * s, 9 * s]);
@@ -125,7 +130,7 @@
         for (let i = 0; i <= N * p; i++) {
           const u = i / N;
           const x = c.log ? c.x0 * Math.pow(c.x1 / c.x0, u) : c.x0 + (c.x1 - c.x0) * u;
-          pts.push([X(x), Y(c.f(x))]);
+          if (c.param) { const q = c.param(x); pts.push([X(q[0]), Y(q[1])]); } else pts.push([X(x), Y(c.f(x))]);
         }
         if (pts.length < 2) continue;
         g.lineJoin = 'round'; g.lineCap = 'round';

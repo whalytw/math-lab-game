@@ -10,7 +10,24 @@
    K({ prompt, win, params, ans, plot, target?, hint, explain })            參數題（參數調校） */
 'use strict';
 (function (LG) {
-  const add = LG.bank.add;
+  /* 課本與單元：名稱和課本相同 */
+  LG.bank.book('3A', {
+    label: '二上A版', name: '數學 3A（龍騰）', order: 2, unitWord: '單元',
+    units: [
+      { id: 1, no: '1', tag: '單元 1', name: '弧度量', curve: 'sin' },
+      { id: 2, no: '2', tag: '單元 2', name: '三角函數的圖形', curve: 'sin' },
+      { id: 3, no: '3', tag: '單元 3', name: '三角的和差角公式', curve: 'sin' },
+      { id: 4, no: '4', tag: '單元 4', name: '正餘弦的疊合', curve: 'sin' },
+      { id: 5, no: '5', tag: '單元 5', name: '指數函數', curve: 'exp' },
+      { id: 6, no: '6', tag: '單元 6', name: '對數與對數律', curve: 'log' },
+      { id: 7, no: '7', tag: '單元 7', name: '對數函數', curve: 'mirror' },
+      { id: 8, no: '8', tag: '單元 8', name: '平面向量', curve: 'vec' },
+      { id: 9, no: '9', tag: '單元 9', name: '平面向量的運算', curve: 'vec' },
+      { id: 10, no: '10', tag: '單元 10', name: '二元一次聯立方程式', curve: 'vec' }
+    ],
+    groups: [['三角 1～4', [1, 2, 3, 4]], ['指對數 5～7', [5, 6, 7]], ['向量 8～10', [8, 9, 10]]]
+  });
+  const { add } = LG.bank.forBook('3A');
   const T = (s, a, e) => ({ s, a, e });
   const C = (prompt, opts, hint, explain) => ({ prompt, opts, hint, explain });
   const M = (tex, v, h, p) => ({ tex, v, h, p });
