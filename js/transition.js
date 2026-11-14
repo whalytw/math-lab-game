@@ -54,7 +54,9 @@
         this.big.innerHTML = `<span class="pre">第</span><span class="n">${info.num}</span><span class="post">關</span>`;
         this.name.textContent = m.name;
         this.unit.textContent = `${m.tag}｜${m.topic}`;
-        LG.fx3d.play(z, 'trans', { meta: m, num: info.num });
+        // 華麗特效若播的是「3D 發光曲線」，就不再畫 2D 曲線，避免同一條曲線出現兩次
+        const fx3 = LG.fx3d.play(z, 'trans', { meta: m, num: info.num });
+        if (fx3 && fx3 !== 'cubes') this.curve = 'none';
       }
       this.el.style.setProperty('--tc', this.color);
       this.el.classList.remove('run');

@@ -141,7 +141,14 @@
   }
   R.trophy = () => R._trophy || (R._trophy = lathe([
     [0.001, -1.6], [0.95, -1.6], [0.95, -1.35], [0.32, -1.25], [0.2, -0.9], [0.14, -0.35], [0.3, -0.15], [0.62, 0.1],
-    [0.86, 0.55], [0.98, 1.1], [1.02, 1.45], [0.9, 1.5], [0.82, 1.15], [0.66, 0.6], [0.001, 0.35]], 40));
+    [0.86, 0.55], [0.98, 1.1], [1.02, 1.45], [0.9, 1.5], [0.82, 1.15], [0.66, 0.6], [0.001, 0.35]], 48));
+  /* 獎盃把手：C 字形的圓管（左邊一個，右邊用鏡射） */
+  R.handle = () => R._handle || (R._handle = (() => {
+    const pts = [];
+    for (let i = 0; i <= 40; i++) { const a = (70 + 220 * i / 40) * Math.PI / 180; pts.push([-0.93 + 0.37 * Math.cos(a), 0.85 + 0.37 * Math.sin(a)]); }
+    return tube(pts, 0.075, 10);
+  })());
+  R.plinth = () => R._plinth || (R._plinth = new THREE.BoxGeometry(1.5, 0.36, 1.5));
   /* 管線（轉場曲線用）：沿著 xy 平面上的點建立圓管 */
   function tube(pts, radius, radial) {
     const pos = [], idx = [], n = pts.length;
@@ -496,10 +503,16 @@
   /* 總分 A：旋轉獎盃＋聚光燈（金、銀、銅依稱號） */
   FX.trophy = (L, zone, o) => {
     const tierCol = ['#ffcc4d', '#ffcc4d', '#d7dde6', '#d08a4f', '#d08a4f'][o.tier || 0];
-    const mat = stdMat(col(tierCol), { metalness: 0.75, roughness: 0.22, emissive: col(tierCol), emissiveIntensity: 0.18 });
+    // 不透明＋雙面：杯子外壁與內壁的面朝向相反，單面材質會讓其中一面消失，看起來像缺口；
+    // 透明材質也會讓同一個網格前後面排序錯亂。淡出改用縮小，不用透明度。
+    const mat = stdMat(col(tierCol), { side: DS(), transparent: false, emissive: col(tierCol), emissiveIntensity: 0.22 });
+    const baseMat = stdMat(col('#3b2f22'), { transparent: false, emissive: col('#1a120a'), emissiveIntensity: 0.3 });
     const cup = new THREE.Mesh(R.trophy(), mat);
+    const hl = new THREE.Mesh(R.handle(), mat), hr = new THREE.Mesh(R.handle(), mat);
+    hr.scale.x = -1;
+    const plinth = new THREE.Mesh(R.plinth(), baseMat); plinth.position.y = -1.85;
     const c = W(L, o.x, o.y);
-    const grp = new THREE.Group(); grp.add(cup); grp.position.set(c[0], c[1], 1); L.scene.add(grp);
+    const grp = new THREE.Group(); grp.add(cup, hl, hr, plinth); grp.position.set(c[0], c[1], 1); L.scene.add(grp);
     const cm = basicMat(0xfff1c0, { blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
     const cone = new THREE.Mesh(R.cone(), cm); cone.position.set(c[0], c[1] + 3.6, 0); L.scene.add(cone);
     const sp = sparkles(L, c[0], c[1], 1.7, 70, tierCol);
@@ -507,13 +520,12 @@
       dur: 4.6, weight: 2,
       update(dt, t) {
         const k = U.ease.outBack(U.clamp(t / 0.8, 0, 1)), out = U.clamp((t - 3.9) / 0.7, 0, 1);
-        grp.scale.setScalar(0.62 * k * (1 - out * 0.5));
-        grp.rotation.set(0.15, t * 2.2, 0);
-        mat.opacity = 1 - out;
+        grp.scale.setScalar(Math.max(0.001, 0.6 * k * (1 - U.ease.inCubic(out))));
+        grp.rotation.set(0.18, t * 2.2, 0);
         cm.opacity = 0.2 * Math.min(1, t / 0.5) * (1 - out);
         sp.update(t, 1 - out);
       },
-      dispose() { L.scene.remove(grp); L.scene.remove(cone); mat.dispose(); cm.dispose(); sp.dispose(); }
+      dispose() { L.scene.remove(grp); L.scene.remove(cone); mat.dispose(); baseMat.dispose(); cm.dispose(); sp.dispose(); }
     };
   };
 
@@ -618,7 +630,7 @@
     try { e = FX[list[vi]](L, zone, anchor(zone, ev, o || {})); } catch (err) { console.error(err); return false; }
     e.zone = zone.idx; e.t = 0; e.name = list[vi]; e.weight = WEIGHT[list[vi]];
     F.active.push(e);
-    return true;
+    return e.name;   // 回傳特效名稱（真值），讓呼叫端知道播了哪一種
   };
 
   F.clear = zone => {
