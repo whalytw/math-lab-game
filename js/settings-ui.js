@@ -174,7 +174,7 @@
     unitSumEl = unitRow.querySelector('.u-sum');
     levelBtns = bk.units.map(un => {
       const c = LG.bank.count(bk.id, un.id);
-      const b = U.el('div', 'lv-tg', `<b style="color:${U.UNIT_HEX[un.idx]}">${un.no}</b><span>${un.name}</span><small>題庫 ${c.total} 題・是非 ${c.by.tf || 0}</small>`);
+      const b = U.el('div', 'lv-tg', `<b style="color:${U.UNIT_HEX[un.idx]}">${un.no}</b><span>${un.name}</span><small>題庫 ${c.total} 題・是非 ${c.by.tf || 0}${c.gen ? `・隨機題型 ${c.gen}` : ''}</small>`);
       b.dataset.u = String(un.id);
       I.onTap(b, () => {
         const cur = LG.curUnits();
@@ -197,7 +197,8 @@
     const us = LG.curUnits();
     levelBtns.forEach(b => b.classList.toggle('on', us.includes(Number(b.dataset.u))));
     const tot = us.reduce((s, u) => s + LG.bank.count(bk.id, u).total, 0);
-    unitSumEl.innerHTML = `已選 <b>${us.length}</b> 個單元（${us.map(u => bk.unitMap[u].no).join('、')}），題庫共 <b>${tot}</b> 題；每位同學從中混合抽 <b>${S.data.count}</b> 關`;
+    const gens = us.reduce((s, u) => s + LG.bank.count(bk.id, u).gen, 0);
+    unitSumEl.innerHTML = `已選 <b>${us.length}</b> 個單元（${us.map(u => bk.unitMap[u].no).join('、')}），題庫共 <b>${tot}</b> 題${gens ? `，另有 <b>${gens}</b> 種隨機題型（每次數字不同）` : ''}；每位同學從中混合抽 <b>${S.data.count}</b> 關`;
     classEl.textContent = String(S.data.classSize);
     const e = estimate();
     const mmss = s => `${Math.floor(s / 60)} 分 ${String(Math.round(s % 60)).padStart(2, '0')} 秒`;

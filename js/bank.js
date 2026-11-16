@@ -69,6 +69,31 @@
     }
   });
 
+  /* ---------- 隨機題型 ----------
+     題庫檔用 LG.bank.gen(產生函式, 標籤) 登記一個「題型樣板」：每次出題時呼叫產生函式，
+     用隨機數字組出一題（格式和固定題目相同），所以同一個樣板每次出現的數字都不同，學生背不了答案。
+     標籤是給 3B／4B 沿用題目時篩選用的文字（例如 'cos'），不影響出題。 */
+  B.gen = (fn, tag) => ({ gen: fn, tag: tag || '' });
+  B.isGen = d => !!(d && typeof d.gen === 'function');
+  const okData = (mech, q) => {
+    if (!q) return false;
+    if (mech === 'num' && q.answer != null) return Number.isInteger(q.answer) && q.answer >= 1 && q.answer <= 999;
+    if (mech === 'mc' || mech === 'boss') return Array.isArray(q.opts) && q.opts.length === 4 && new Set(q.opts).size === 4;
+    if (mech === 'match') return q.tex != null && q.v != null;
+    return true;
+  };
+  /* 把題庫項目變成一題：固定題目原樣回傳；樣板就產生一題（數字不合條件時重抽，最多 40 次） */
+  B.make = (d, mech) => {
+    if (!B.isGen(d)) return d;
+    for (let i = 0; i < 40; i++) {
+      let q = null;
+      try { q = d.gen(LG.genKit); } catch (e) { q = null; }
+      if (okData(mech, q)) return q;
+    }
+    console.error('隨機題型產生失敗', mech, d.tag);
+    return null;
+  };
+
   /* 某冊某單元某玩法、某難度可用的題目；指定難度的題目不夠時改用全部難度 */
   B.pool = (book, unit, mech, diff) => {
     const all = B.items.filter(it => it.book === book && it.unit === unit && it.mech === mech);
@@ -78,27 +103,37 @@
 
   /* 設定頁用：各單元題數（是非、配對以「題」計，即敘述數、算式數） */
   B.count = (book, unit) => {
-    const out = { total: 0, by: {} };
+    const out = { total: 0, by: {}, gen: 0 };
     B.items.forEach(it => {
       if (it.book !== book || it.unit !== unit) return;
+      if (B.isGen(it.data)) { out.gen++; return; }   // 隨機題型另外計（每次數字不同）
       out.total++;
       out.by[it.mech] = (out.by[it.mech] || 0) + 1;
     });
     return out;
   };
 
-  /* 跨三區、跨同學的最近出題紀錄：避免後面同學看前面的人玩就知道答案 */
-  const recent = {};
-  function remember(bucket, keys, poolSize, need) {
+  /* 跨三區、跨同學的最近出題紀錄：避免後面同學看前面的人玩就知道答案。
+     存在這台電腦的瀏覽器裡，重新整理網頁或下一節課再開，也會接著輪替，不會從頭再出同幾題。 */
+  const RKEY = 'mathLab.recent.v1';
+  let recent = {};
+  try { recent = JSON.parse(localStorage.getItem(RKEY) || '{}') || {}; } catch (e) { recent = {}; }
+  function saveRecent() { try { localStorage.setItem(RKEY, JSON.stringify(recent)); } catch (e) { /* 無法儲存時只在本次有效 */ } }
+  /* fixed：這個題庫桶裡固定題目的數量；hasGen：有沒有隨機題型可以補位 */
+  function remember(bucket, keys, fixed, need, hasGen) {
+    if (!keys.length) return;
     const r = recent[bucket] || (recent[bucket] = []);
-    keys.forEach(k => r.push(k));
-    const mem = Math.max(0, Math.min(8, poolSize - need));
+    keys.forEach(k => { const i = r.indexOf(k); if (i >= 0) r.splice(i, 1); r.push(k); });
+    // 有隨機題型補位時，固定題目可以全部記住（輪完一輪才會再出）；沒有時至少留 need 題可以出
+    const mem = Math.max(0, Math.min(hasGen ? 12 : 8, hasGen ? fixed : fixed - need));
     while (r.length > mem) r.shift();
+    saveRecent();
   }
+  /* 出題順序：沒出過的固定題目與隨機題型在前（隨機題型較常被選到），最近出過的固定題目排最後 */
   function freshOrder(bucket, list) {
     const r = recent[bucket] || [];
-    const sh = U.shuffle(list);
-    return sh.filter(it => !r.includes(it.key)).concat(sh.filter(it => r.includes(it.key)));
+    return list.map(it => ({ it, k: B.isGen(it.data) ? Math.random() * 0.6 : r.includes(it.key) ? 1 + r.indexOf(it.key) / 100 + Math.random() * 0.001 : Math.random() }))
+      .sort((a, b) => a.k - b.k).map(o => o.it);
   }
 
   /* 依玩法組出一關的題目 */
@@ -111,21 +146,21 @@
     if (pool.length < need) return null;
     const bucket = `${book}|${unit}|${mech}|${diff}`;
     const order = freshOrder(bucket, pool);
-    let chosen;
-    if (mech === 'match') {
-      // 3 個算式的值要互不相同
-      chosen = [];
-      for (const it of order) {
-        if (chosen.some(c => c.data.v === it.data.v)) continue;
-        chosen.push(it);
-        if (chosen.length === 3) break;
-      }
-      if (chosen.length < 3) return null;
-    } else chosen = order.slice(0, need);
+    // 依序取題；隨機題型在這裡產生數字。配對題的 3 個算式，值要互不相同
+    const chosen = [];
+    for (const it of order) {
+      const data = B.make(it.data, mech);
+      if (!data) continue;
+      if (mech === 'match' && chosen.some(c => String(c.data.v) === String(data.v) || c.data.tex === data.tex)) continue;
+      chosen.push({ key: it.key, gen: B.isGen(it.data), data });
+      if (chosen.length === need) break;
+    }
+    if (chosen.length < need) return null;
     chosen.forEach(c => used.add(c.key));
-    remember(bucket, chosen.map(c => c.key), pool.length, need);
+    const fixedN = full.filter(it => !B.isGen(it.data)).length;
+    remember(bucket, chosen.filter(c => !c.gen).map(c => c.key), fixedN, need, fixedN < full.length);
     const datas = chosen.map(c => c.data);
-    if (L.compose) return L.compose(datas, { unit, diff, pool: full.map(it => it.data) });
+    if (L.compose) return L.compose(datas, { unit, diff, pool: full.filter(it => !B.isGen(it.data)).map(it => it.data) });
     return L.prep ? L.prep(datas[0]) : datas[0];
   }
 
