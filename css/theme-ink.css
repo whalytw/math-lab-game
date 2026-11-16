@@ -181,3 +181,13 @@
   60% { transform: scaleX(1.03); opacity: 1; }
   100% { transform: scaleX(1); opacity: 1; }
 }
+
+/* ---------- 新玩法（切切樂、排序輸送帶、座標尋寶、公式拼圖） ---------- */
+.theme-ink .tl-eq { background: rgba(252, 247, 236, 0.7); border-color: rgba(70, 55, 40, 0.25); }
+.theme-ink .tl-slot { border-color: rgba(70, 55, 40, 0.45); background: rgba(255, 252, 244, 0.6); }
+.theme-ink .tl-slot.hover { background: color-mix(in srgb, var(--uc) 18%, #fffaf0); }
+.theme-ink .tl-slot .tl-tile { background: color-mix(in srgb, var(--uc) 12%, #fffaf0); }
+.theme-ink .pt-tag { background: rgba(252, 247, 236, 0.95); }
+.theme-ink .sl-pill { background: radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.7), transparent 60%), #f7efdd; border-color: rgba(70, 55, 40, 0.5); box-shadow: 0 0.25em 0.6em rgba(70, 55, 40, 0.2); }
+.theme-ink .sl-v { color: #8a1f17; }
+.theme-ink .or-arrow { background: repeating-linear-gradient(180deg, rgba(70, 55, 40, 0.45) 0 0.8em, transparent 0.8em 1.4em); }

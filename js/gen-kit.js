@@ -75,6 +75,38 @@
     if (w.length < 3) K.fail('選項不足');
     return { prompt, opts: [right].concat(w), hint, explain };
   };
+  /* ---------- 新玩法的題目格式 ---------- */
+  /* 約略值：整數直接寫，其他取到小數第 2 位（給排序題答對後顯示） */
+  K.ap = v => (Math.abs(v - Math.round(v)) < 1e-9 ? '=' + Math.round(v) : (+v.toFixed(Math.abs(v) < 0.1 ? 3 : 2)).toString());
+  /* 排序：items = [[TeX, 數值], …]；desc = true 時由大到小。解說自動寫出正確順序 */
+  K.O = (prompt, items, hint, extra, desc) => {
+    const it = items.map(([tex, v, ap]) => ({ tex, v, ap: ap == null ? K.ap(v) : ap }));
+    const s = it.slice().sort((a, b) => (desc ? b.v - a.v : a.v - b.v)).map(a => a.tex.replace(/\\dfrac/g, '\\frac'));
+    return { prompt, items: it, desc: !!desc, hint, explain: `$${s.join(desc ? '>' : '<')}$` + (extra ? '；' + extra : '') };
+  };
+  /* 座標尋寶：win = [xmin, xmax, ymin, ymax]（或物件）、shapes 為 graph2d 圖形、ans = [x, y] */
+  K.P = (prompt, win, shapes, ans, hint, explain, ansTex) => {
+    const w = Array.isArray(win) ? { xmin: win[0], xmax: win[1], ymin: win[2], ymax: win[3] } : win;
+    return { prompt, win: w, shapes: shapes || [], ans, ansTex: ansTex || `(${ans[0]},${ans[1]})`, hint, explain };
+  };
+  /* 數線上的點（座標尋寶的一維版） */
+  K.P1 = (prompt, x0, x1, shapes, ans, hint, explain) =>
+    ({ prompt, win: { xmin: x0, xmax: x1, ymin: -0.9, ymax: 0.9 }, line1d: true, shapes: shapes || [], ans: [ans, 0], ansTex: String(ans), hint, explain });
+  /* 公式拼圖：tpl 用 @ 表示空格（@ 不能放在大括號裡） */
+  K.T = (prompt, tpl, ans, extra, hint, explain, alt) => ({ prompt, tpl, ans, extra: [...new Set(extra || [])].filter(x => !ans.includes(x)).slice(0, 4), alt: alt || [], hint, explain });
+  /* 可交換的空格：groups 內的空格可以互換順序（例如 a²+2ab+b² 三項），回傳所有其他也正確的填法 */
+  K.perm = (ans, groups) => {
+    let out = [ans.slice()];
+    const permsOf = a => (a.length <= 1 ? [a] : a.flatMap((x, i) => permsOf(a.slice(0, i).concat(a.slice(i + 1))).map(p => [x].concat(p))));
+    for (const g of groups) {
+      const next = [];
+      for (const base of out) for (const p of permsOf(g)) { const b = base.slice(); g.forEach((slot, k) => { b[slot] = base[p[k]]; }); next.push(b); }
+      out = next;
+    }
+    const key = a => a.join('0001');
+    const seen = new Set([key(ans)]);
+    return out.filter(a => { const k = key(a); if (seen.has(k)) return false; seen.add(k); return true; });
+  };
   K.$ = s => `$${s}$`;
   K.GIVEN = '已知 $\\log 2\\approx0.3010$，$\\log 3\\approx0.4771$';
 

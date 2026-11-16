@@ -1,0 +1,163 @@
+/* 數學實驗室 — 深海風格（暗色、低亮度）
+   只在 <body class="theme-ocean"> 時生效。設計重點是「站在大螢幕前不刺眼」：
+   1. 底色是深藍綠，文字用帶灰的淡青色（不用純白），整體亮度比科技風格再低一些。
+   2. 沒有大面積的亮色塊：開始、下一題、求救等大按鈕改成「深色底＋彩色邊框與文字」。
+   3. 發光、陰影都收斂；背景只有很淡的光束、氣泡與海草剪影（CSS 漸層與 SVG，不用外部圖片）。 */
+
+.theme-ocean #app {
+  --ink: #072630;            /* 底色：深海藍綠 */
+  --ink-deep: #041820;
+  --ink-card: #0c3440;
+  --paper: #cfe1e3;          /* 文字：淡青灰（不用純白） */
+  --paper-dim: #86aab0;
+  --line: rgba(110, 190, 200, 0.24);
+  --grid-a: rgba(110, 190, 200, 0.07);
+  --grid-b: transparent;
+  --ok: #62cf98;
+  --bad: #ec7f6f;
+  --warn: #dfc06c;
+  --aqua: #55c3c3;
+  --aqua-deep: #1f6a6e;
+  --sand: #dfc06c;
+  --weeds: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 100' preserveAspectRatio='none'><path d='M0 100 L0 86 C40 80 70 90 110 84 C150 78 190 90 240 85 C290 80 330 88 400 83 L400 100 Z' fill='rgba(2,14,18,0.55)'/><g fill='none' stroke='rgba(60,140,120,0.32)' stroke-width='5' stroke-linecap='round'><path d='M30 98 C24 80 40 66 32 44 C26 30 36 20 34 10'/><path d='M44 98 C50 84 40 72 48 58'/><path d='M318 98 C312 78 330 62 320 40 C314 26 326 16 322 6'/><path d='M334 98 C342 82 330 70 340 52'/><path d='M190 98 C186 88 196 80 190 70'/></g></svg>");
+  --bubbles:
+    radial-gradient(circle at 50% 50%, transparent 52%, rgba(160, 225, 225, 0.22) 58%, transparent 66%);
+  background: var(--ink);
+  color: var(--paper);
+}
+.theme-ocean { background: #031218; }
+
+/* ---------- 教師列：深色、細的湖水綠底線 ---------- */
+.theme-ocean #teacher-bar { background: #04161c; border-bottom: 1px solid rgba(85, 195, 195, 0.28); }
+.theme-ocean .tb-btn { background: rgba(85, 195, 195, 0.07); border-color: rgba(110, 190, 200, 0.28); }
+.theme-ocean .tb-btn.pressed, .theme-ocean .tb-btn.holding { background: rgba(85, 195, 195, 0.2); }
+.theme-ocean .tb-logo .l1 { stroke: rgba(207, 225, 227, 0.4); }
+
+/* ---------- 遊戲區：上淺下深的海水＋淡淡光束＋零星氣泡＋海草剪影 ---------- */
+.theme-ocean #zones { background: #031218; }
+.theme-ocean .zone-inner {
+  border: 1px solid rgba(110, 190, 200, 0.22);
+  background-color: var(--ink);
+  background-image:
+    var(--weeds),
+    var(--bubbles), var(--bubbles), var(--bubbles), var(--bubbles),
+    linear-gradient(103deg, transparent 18%, rgba(140, 220, 225, 0.045) 22%, transparent 28%, transparent 46%, rgba(140, 220, 225, 0.035) 51%, transparent 57%, transparent 70%, rgba(140, 220, 225, 0.04) 74%, transparent 79%),
+    linear-gradient(180deg, #0b3644 0%, #072630 45%, #041a22 100%);
+  background-size: 100% 16cqh, 2.6cqw 2.6cqw, 1.6cqw 1.6cqw, 2cqw 2cqw, 1.2cqw 1.2cqw, 100% 70%, 100% 100%;
+  background-position: bottom left, 8% 64%, 88% 40%, 76% 78%, 20% 30%, top left, top left;
+  background-repeat: no-repeat;
+}
+
+/* HUD */
+.theme-ocean .hud { background: rgba(3, 20, 26, 0.7); border-bottom-color: rgba(110, 190, 200, 0.18); }
+.theme-ocean .hud-dots i { border-color: rgba(134, 170, 176, 0.55); }
+.theme-ocean .hud-dots i.cur { border-color: var(--aqua); box-shadow: 0 0 0 0.45cqw rgba(85, 195, 195, 0.16); }
+.theme-ocean .hud-bar { background: rgba(110, 190, 200, 0.08); }
+.theme-ocean .hud-score { color: var(--sand); }
+
+/* 題目框、提示 */
+.theme-ocean .lv-q { background: rgba(3, 20, 26, 0.72); border-radius: 0.5em; }
+.theme-ocean .lv-hint { border-color: rgba(223, 192, 108, 0.3); }
+.theme-ocean .lv-hint .hi { background: rgba(223, 192, 108, 0.16); }
+.theme-ocean .lv-hint.on { background: rgba(223, 192, 108, 0.08); }
+.theme-ocean .lv-hint.on .hi { background: rgba(223, 192, 108, 0.85); color: #2a2000; }
+.theme-ocean .lv-hint.answer { background: rgba(98, 207, 152, 0.08); }
+.theme-ocean .lv-hint.answer .hi { background: rgba(98, 207, 152, 0.85); color: #06291a; }
+
+/* ---------- 按鈕：深色底＋彩色邊框與文字（不用大面積亮色） ---------- */
+.theme-ocean .btn-go {
+  background: color-mix(in srgb, var(--uc) 26%, #072630); color: color-mix(in srgb, var(--uc) 70%, #e8f2f3);
+  border: 0.12em solid color-mix(in srgb, var(--uc) 75%, transparent);
+  box-shadow: 0 0.26em 0 rgba(0, 0, 0, 0.45);
+}
+.theme-ocean .btn-go.as-label { background: transparent; color: var(--paper-dim); border: 2px dashed var(--line); box-shadow: none; }
+.theme-ocean .btn-help {
+  background: rgba(223, 192, 108, 0.1); color: var(--sand); border: 0.12em dashed rgba(223, 192, 108, 0.7); transform: none;
+  box-shadow: 0 0.22em 0 rgba(0, 0, 0, 0.4);
+}
+.theme-ocean .btn-help.pressed { transform: scale(0.95); }
+.theme-ocean .btn-help.used { background: transparent; color: var(--paper-dim); border-color: rgba(134, 170, 176, 0.4); }
+.theme-ocean .btn-start, .theme-ocean .btn-next, .theme-ocean .btn-again {
+  background: linear-gradient(#11505a, #0b3a44); color: #d8eeee; border: 0.12em solid rgba(85, 195, 195, 0.75);
+  box-shadow: 0 0.28em 0 rgba(0, 0, 0, 0.45);
+}
+.theme-ocean .btn-start { animation: oceanBreathe 3s ease-in-out infinite; }
+@keyframes oceanBreathe { 0%, 100% { box-shadow: 0 0.28em 0 rgba(0, 0, 0, 0.45), 0 0 0 0 rgba(85, 195, 195, 0.28); } 50% { box-shadow: 0 0.28em 0 rgba(0, 0, 0, 0.45), 0 0 0 1.2cqw rgba(85, 195, 195, 0); } }
+.theme-ocean .btn-next .prog, .theme-ocean .btn-again .prog { background: rgba(98, 207, 152, 0.7); }
+
+/* ---------- 卡片類：深色底、圓角、發光收斂 ---------- */
+.theme-ocean .opt, .theme-ocean .sock, .theme-ocean .tf-row, .theme-ocean .w-tag, .theme-ocean .g-tag, .theme-ocean .rs-item {
+  border-radius: 0.6em;
+}
+.theme-ocean .opt.on { background: color-mix(in srgb, var(--uc) 20%, var(--ink-card)); }
+.theme-ocean .opt.ok { box-shadow: 0 0 0.7em rgba(98, 207, 152, 0.35); }
+.theme-ocean .opt.answer, .theme-ocean .w-tag.answer, .theme-ocean .tf-b.answer { animation-name: oceanGlow; }
+@keyframes oceanGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(98, 207, 152, 0.45); } 50% { box-shadow: 0 0 0.8em 0.12em rgba(98, 207, 152, 0.4); } }
+.theme-ocean .tf-b.on { background: color-mix(in srgb, var(--uc) 30%, var(--ink-card)); color: color-mix(in srgb, var(--uc) 70%, #e8f2f3); box-shadow: none; }
+.theme-ocean .tf-row.hinted .tf-b.on { background: rgba(223, 192, 108, 0.3); border-color: var(--warn); color: var(--sand); }
+
+/* 第 1 關 */
+.theme-ocean .sl-track { background: rgba(110, 190, 200, 0.16); }
+.theme-ocean .g-target::after { background: rgba(223, 192, 108, 0.85); }
+
+/* 第 2 關：炸彈改成沉在海底的深色水雷箱 */
+.theme-ocean .bomb .box { fill: #12404a; stroke: #2f6f76; }
+.theme-ocean .bomb .sticks rect { fill: #a2524a; stroke: #6e2f2a; }
+.theme-ocean .bomb .strap { fill: #2f6f76; }
+.theme-ocean .bomb .grill { fill: #0b2c34; }
+.theme-ocean .bomb .screen { fill: #031418; }
+
+/* 第 3 關：接線板 */
+.theme-ocean .l3 .board { background-color: rgba(3, 22, 28, 0.72); background-image: radial-gradient(circle at 1px 1px, rgba(85, 195, 195, 0.16) 1.2px, transparent 1.5px); }
+.theme-ocean .plug { background: var(--sand); border-color: #072630; box-shadow: 0 0 0 0.2cqw rgba(223, 192, 108, 0.35); }
+.theme-ocean .sock-r.lit .bulb { background: #e9d9a0; box-shadow: 0 0 0.6em 0.1em rgba(223, 192, 108, 0.6); }
+
+/* 第 4 關：望遠鏡改成潛水艇的圓窗 */
+.theme-ocean .lens {
+  background: radial-gradient(circle at 40% 35%, #0e3d48 0%, #072630 60%, #041820 100%);
+  border-color: #2b5a60; box-shadow: 0 0 0 0.5cqw #4d7c80, 0 0 3cqw rgba(0, 0, 0, 0.6), inset 0 0 3cqw rgba(0, 0, 0, 0.7);
+}
+.theme-ocean .lens .stars { opacity: 0.35; }
+.theme-ocean .lens-num { text-shadow: 0 0 0.3em color-mix(in srgb, var(--uc) 60%, transparent); }
+.theme-ocean .dl-win { background: #03141a; }
+
+/* 第 6 關、圖形卡 */
+.theme-ocean .v3d { background: #05202a; }
+
+/* ---------- 提示訊息 ---------- */
+.theme-ocean .toast { background: rgba(3, 20, 26, 0.95); border-width: 0.12em; }
+
+/* ---------- 轉場：深色海水幕，上下緣是一條淡淡的湖水綠光帶 ---------- */
+.theme-ocean .tr-sheet {
+  background-color: #062530;
+  background-image: var(--bubbles), var(--bubbles), linear-gradient(180deg, #0b3644, #041a22);
+  background-size: 3cqw 3cqw, 1.8cqw 1.8cqw, 100% 100%;
+  background-position: 12% 30%, 70% 60%, 0 0;
+}
+.theme-ocean .tr-sheet::before, .theme-ocean .tr-sheet::after { height: 0.5cqh; box-shadow: 0 0 1.4cqh 0.2cqh var(--tc); opacity: 0.8; }
+.theme-ocean .tr-unit { background: rgba(3, 20, 26, 0.85); }
+
+/* ---------- 待機畫面 ---------- */
+.theme-ocean .idle-title { color: #bfe3e3; letter-spacing: 0.1em; }
+.theme-ocean .idle-rules b { color: var(--sand); }
+
+/* ---------- 總分 ---------- */
+.theme-ocean .rs-title { color: #bfe3e3; }
+.theme-ocean .rs-score .num { color: var(--sand); }
+.theme-ocean .rs-item { background: rgba(3, 20, 26, 0.66); }
+
+/* 答錯特效：畫面像被水流推了一下 */
+.stage.sway { animation: oceanSway 0.8s ease-out; }
+@keyframes oceanSway {
+  0% { transform: translateX(0) rotate(0); }
+  18% { transform: translateX(-1.6%) rotate(-0.6deg); }
+  40% { transform: translateX(1.2%) rotate(0.45deg); }
+  62% { transform: translateX(-0.6%) rotate(-0.2deg); }
+  100% { transform: none; }
+}
+
+/* ---------- 新玩法（切切樂、排序輸送帶、座標尋寶、公式拼圖） ---------- */
+.theme-ocean .sl-pill { background: radial-gradient(ellipse at 30% 25%, rgba(200, 240, 240, 0.14), transparent 55%), color-mix(in srgb, var(--uc) 12%, #0c3440); box-shadow: 0 0.3em 0.8em rgba(0, 0, 0, 0.35); }
+.theme-ocean .tl-eq { background: rgba(3, 20, 26, 0.6); }
+.theme-ocean .pt-tag { background: rgba(3, 20, 26, 0.9); }
+.theme-ocean .or-card.ok, .theme-ocean .opt.ok { box-shadow: none; }

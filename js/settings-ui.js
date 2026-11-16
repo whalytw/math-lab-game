@@ -3,6 +3,7 @@
 (function (LG) {
   const U = LG.util, S = LG.settings, I = LG.input;
   const UI = {};
+  let mechBtns = [];
   let root, segs = [], keypad, touchTest, levelBtns = [], estEl, pinEl, flashEl, classEl, unitSumEl, bookSel, unitRow, fxRow, fxNote;
 
   /* 華麗特效壓力測試：關閉設定頁，三區同時播放最重的特效 30 秒，結束後顯示結果 */
@@ -86,6 +87,7 @@
       seg('求救卡扣秒', 'penalty', [5, 10, 15].map(v => ({ v, t: v + ' 秒' }))),
       seg('答對基本分', 'base', [10, 15, 20].map(v => ({ v, t: v + ' 分' })))
     );
+    cg.appendChild(buildMechs());
     // ---- 出題範圍：冊數（下拉選單）＋總題數＋勾選單元 ----
     const cu = root.querySelector('.c-units');
     const bkRow = U.el('div', 'st-row');
@@ -154,6 +156,36 @@
     ca.appendChild(df);
   }
 
+  /* 玩法開關：點一下關掉／打開；至少保留 2 種。
+     關掉的玩法不會出現，但某單元用剩下的玩法排不出關卡時，仍會用關掉的玩法補上，關數不會變少。 */
+  const MIN_ON = 2;
+  function buildMechs() {
+    const row = U.el('div', 'st-row');
+    row.innerHTML = '<div class="st-label">玩法<small>點一下可關掉或打開；至少保留 2 種。關掉的玩法不會出現（只有勾選的單元用剩下的玩法排不出關卡時才會補上）</small></div><div class="seg m-quick"></div><div class="seg m-grid"></div>';
+    const list = Object.keys(LG.MECH).filter(m => LG.bank.levels[m])
+      .map(m => ({ m, L: LG.bank.levels[m] }))
+      .sort((a, b) => a.L.meta.id - b.L.meta.id);
+    const grid = row.querySelector('.m-grid');
+    mechBtns = list.map(({ m, L }) => {
+      const b = U.el('div', 'seg-b m-tg', L.meta.name + (L.meta.id >= 9 ? '<sup>新</sup>' : ''));
+      b.dataset.m = m;
+      I.onTap(b, () => {
+        const off = S.data.mechOff.slice(), k = off.indexOf(m);
+        if (k >= 0) off.splice(k, 1);
+        else {
+          if (list.length - off.length <= MIN_ON) { flash(`至少要保留 ${MIN_ON} 種玩法`); return; }
+          off.push(m);
+        }
+        S.set('mechOff', off);
+        render();
+      });
+      grid.appendChild(b);
+      return b;
+    });
+    row.querySelector('.m-quick').appendChild(button('全部打開', () => { S.set('mechOff', []); render(); flash('全部玩法都已打開'); }, 'seg-like'));
+    return row;
+  }
+
   /* 依目前的冊數建立單元勾選清單 */
   function setUnits(list) {
     const bk = LG.curBook();
@@ -192,6 +224,7 @@
     segs.forEach(({ row, key }) => {
       row.querySelectorAll('.seg-b').forEach(b => b.classList.toggle('on', b.dataset.v === String(S.data[key])));
     });
+    mechBtns.forEach(b => b.classList.toggle('on', !S.data.mechOff.includes(b.dataset.m)));
     const bk = LG.curBook();
     if (bookSel.value !== bk.id) { bookSel.value = bk.id; buildUnits(); }
     const us = LG.curUnits();

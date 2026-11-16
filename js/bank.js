@@ -16,7 +16,12 @@
     mirror: { need: 1, label: '圖形（鏡射）' },
     boss: { need: 1, label: '魔王' },
     tune: { need: 1, label: '參數調整' },
-    graph: { need: 1, label: '圖形判讀' }
+    graph: { need: 1, label: '圖形判讀' },
+    // 新玩法（2026-11）：切切樂直接用配對題的算式（from），不需要另外出題
+    slice: { need: 6, label: '切切樂', from: 'match' },
+    order: { need: 1, label: '排序' },
+    point: { need: 1, label: '座標尋寶' },
+    tiles: { need: 1, label: '公式拼圖' }
   };
   LG.MECH = MECH;
 
@@ -79,7 +84,12 @@
     if (!q) return false;
     if (mech === 'num' && q.answer != null) return Number.isInteger(q.answer) && q.answer >= 1 && q.answer <= 999;
     if (mech === 'mc' || mech === 'boss') return Array.isArray(q.opts) && q.opts.length === 4 && new Set(q.opts).size === 4;
-    if (mech === 'match') return q.tex != null && q.v != null;
+    if (mech === 'match' || mech === 'slice') return q.tex != null && q.v != null;
+    if (mech === 'order') return Array.isArray(q.items) && q.items.length >= 3 && q.items.every(it => Number.isFinite(it.v)) &&
+      q.items.every((a, i) => q.items.every((b, j) => i === j || Math.abs(a.v - b.v) > 1e-6 * Math.max(1, Math.abs(a.v))));
+    if (mech === 'point') return Array.isArray(q.ans) && q.ans.every(Number.isInteger) && q.win &&
+      q.ans[0] > q.win.xmin && q.ans[0] < q.win.xmax && q.ans[1] > q.win.ymin && q.ans[1] < q.win.ymax;
+    if (mech === 'tiles') return typeof q.tpl === 'string' && Array.isArray(q.ans) && q.ans.length === q.tpl.split('@').length - 1;
     return true;
   };
   /* 把題庫項目變成一題：固定題目原樣回傳；樣板就產生一題（數字不合條件時重抽，最多 40 次） */
@@ -96,7 +106,8 @@
 
   /* 某冊某單元某玩法、某難度可用的題目；指定難度的題目不夠時改用全部難度 */
   B.pool = (book, unit, mech, diff) => {
-    const all = B.items.filter(it => it.book === book && it.unit === unit && it.mech === mech);
+    const src = (MECH[mech] && MECH[mech].from) || mech;   // 切切樂用配對題的題庫
+    const all = B.items.filter(it => it.book === book && it.unit === unit && it.mech === src);
     const fit = all.filter(it => !it.d || it.d === diff);
     return fit.length >= MECH[mech].need ? fit : all;
   };
@@ -152,6 +163,7 @@
       const data = B.make(it.data, mech);
       if (!data) continue;
       if (mech === 'match' && chosen.some(c => String(c.data.v) === String(data.v) || c.data.tex === data.tex)) continue;
+      if (mech === 'slice' && chosen.some(c => c.data.tex === data.tex)) continue;
       chosen.push({ key: it.key, gen: B.isGen(it.data), data });
       if (chosen.length === need) break;
     }
@@ -195,16 +207,21 @@
     }
     // 2. 每關的玩法：第 1 關是非暖身、最後一關魔王，其餘輪流使用較少用過的玩法
     const used = new Set(), mechUse = {}, rounds = [];
+    // 老師在設定頁關掉的玩法；勾選的單元用剩下的玩法排不出關卡時，才用關掉的玩法補上（關數不會變少）
+    const off = new Set((LG.settings && LG.settings.data.mechOff) || []);
     let prev = null;
     seq.forEach((unit0, i) => {
       // 這個單元的題目用完時，改由其他勾選的單元出題
       const tryUnits = [unit0].concat(U.shuffle(units.filter(u => u !== unit0)));
-      for (const unit of tryUnits) {
-        if (pickRound(unit, i)) return;
+      for (const strict of [true, false]) {
+        if (!strict && !off.size) break;
+        for (const unit of tryUnits) {
+          if (pickRound(unit, i, strict)) return;
+        }
       }
     });
-    function pickRound(unit, i) {
-      const avail = Object.keys(MECH).filter(m => B.levels[m] &&
+    function pickRound(unit, i, strict) {
+      const avail = Object.keys(MECH).filter(m => B.levels[m] && !(strict && off.has(m)) &&
         B.pool(book, unit, m, diff).filter(it => !used.has(it.key)).length >= MECH[m].need);
       let order;
       // 是非題（觀念題）在中間也會輪到，但每人最多約 1/4 的關數

@@ -390,12 +390,12 @@
   FX.tube = (L, zone, o) => {
     const kind = (o.meta && o.meta.curve) || 'all';
     const geo = R.tube(kind).clone(), uc = col(U.UNIT_HEX[o.meta ? o.meta.unit : 1] || '#8ec5ff');
-    // 淺色底（水墨、粉彩）不發光：水墨像一筆濃墨，粉彩像一條糖果色軟管
-    const ink = LG.theme.brush, light = LG.theme.light;
-    const mat = stdMat(uc, ink ? { emissive: uc, emissiveIntensity: 0.15 } : light ? { emissive: uc, emissiveIntensity: 0.35 } : { emissive: uc, emissiveIntensity: 0.65, roughness: 0.3, metalness: 0.3 });
+    // 淺色底（水墨、粉彩）不發光：水墨像一筆濃墨，粉彩像一條糖果色軟管；深海（soft）發光收斂、頭部不用白光
+    const ink = LG.theme.brush, light = LG.theme.light, soft = LG.theme.soft;
+    const mat = stdMat(uc, ink ? { emissive: uc, emissiveIntensity: 0.15 } : light ? { emissive: uc, emissiveIntensity: 0.35 } : soft ? { emissive: uc, emissiveIntensity: 0.4 } : { emissive: uc, emissiveIntensity: 0.65, roughness: 0.3, metalness: 0.3 });
     const mesh = new THREE.Mesh(geo, mat);
     const grp = new THREE.Group(); grp.add(mesh);
-    const head = ink ? inkQuad(R.blot(1), 0x221d18) : light ? inkQuad(R.starTex(), 0xffd66e) : glowQuad(0xffffff);
+    const head = ink ? inkQuad(R.blot(1), 0x221d18) : light ? inkQuad(R.starTex(), 0xffd66e) : glowQuad(soft ? 0x9fe0d8 : 0xffffff);
     head.scale.setScalar(1.4); grp.add(head);
     const total = geo.index.count, seg = geo.userData.segIdx, pts = geo.userData.pts;
     grp.position.set(0, -L.hh * 0.32, -4);
@@ -967,9 +967,9 @@
     return g;
   })());
   /* 星點環繞（一般混色版） */
-  function candySparkles(L, cx, cy, r, n, tex) {
-    const pos = new Float32Array(n * 3), colr = new Float32Array(n * 3), ph = [];
-    for (let i = 0; i < n; i++) { const cc = col(CANDY[i % CANDY.length]); colr.set([cc.r, cc.g, cc.b], i * 3); ph.push([U.rand(0, 6.28), U.rand(0.6, 1.2), U.rand(-0.6, 0.6)]); }
+  function candySparkles(L, cx, cy, r, n, tex, colors) {
+    const pos = new Float32Array(n * 3), colr = new Float32Array(n * 3), ph = [], cl = colors || CANDY;
+    for (let i = 0; i < n; i++) { const cc = col(cl[i % cl.length]); colr.set([cc.r, cc.g, cc.b], i * 3); ph.push([U.rand(0, 6.28), U.rand(0.6, 1.2), U.rand(-0.6, 0.6)]); }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(colr, 3));
     const pm = new THREE.PointsMaterial({ size: 0.42, map: tex || R.starTex(), transparent: true, depthWrite: false, vertexColors: true, alphaTest: 0.15 });
@@ -1228,6 +1228,375 @@
     };
   };
 
+  /* ================= 深海風格的 3D 特效 =================
+     暗色底可以用加法發光，但亮度刻意壓低（不透明度約 0.5～0.8），學生站在大螢幕前才不刺眼。
+     題材：魚群、水母、浮游生物的冷光、錨、氣泡、鮟鱇魚的小燈、寶箱。 */
+  const SEA = ['#55c3c3', '#62cf98', '#dfc06c', '#ec8a7c', '#ad9bd6', '#80c8e6'];
+  /* 小魚：壓扁的菱形身體＋三角尾鰭（不帶索引，給 Batch 用） */
+  R.fish = () => R._fish || (R._fish = (() => {
+    const N = [0.3, 0, 0], Bk = [-0.14, 0, 0], T = [0.02, 0.1, 0], Bo = [0.02, -0.1, 0], Lz = [0.02, 0, 0.05], Rz = [0.02, 0, -0.05];
+    const tris = [[N, T, Lz], [N, Lz, Bo], [N, Bo, Rz], [N, Rz, T], [Bk, Lz, T], [Bk, Bo, Lz], [Bk, Rz, Bo], [Bk, T, Rz], [Bk, [-0.3, 0.11, 0], [-0.3, -0.11, 0]]];
+    const v = []; tris.forEach(t => t.forEach(p => v.push(p[0], p[1], p[2])));
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); g.computeVertexNormals();
+    return g;
+  })());
+  /* 大氣泡裡寫著關卡數字 */
+  function numBubble(num, color) {
+    const c = canvas(256), g = c.getContext('2d');
+    g.fillStyle = 'rgba(6, 34, 42, 0.6)'; g.beginPath(); g.arc(128, 128, 114, 0, Math.PI * 2); g.fill();
+    g.drawImage(R.bubbleTex().image, 0, 0, 256, 256);
+    g.fillStyle = color; g.font = '800 150px "Barlow Condensed", Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText(String(num), 128, 140);
+    return texOf(c);
+  }
+  /* 錨（鏽紅色） */
+  R.anchorTex = () => R._anchorTex || (R._anchorTex = (() => {
+    const c = canvas(256), g = c.getContext('2d');
+    const draw = (cl, w) => {
+      g.strokeStyle = cl; g.fillStyle = cl; g.lineCap = 'round'; g.lineJoin = 'round';
+      g.lineWidth = w; g.beginPath(); g.arc(128, 36, 18, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = w + 4; g.beginPath(); g.moveTo(128, 56); g.lineTo(128, 226); g.stroke();
+      g.lineWidth = w; g.beginPath(); g.moveTo(84, 84); g.lineTo(172, 84); g.stroke();
+      g.lineWidth = w + 2; g.beginPath(); g.arc(128, 150, 80, Math.PI * 0.12, Math.PI * 0.88); g.stroke();
+      [[1, 198, 176], [-1, 58, 176]].forEach(([s, x, y]) => { g.beginPath(); g.moveTo(x + s * 4, y + 22); g.lineTo(x + s * 14, y - 16); g.lineTo(x - s * 22, y + 8); g.closePath(); g.fill(); });
+    };
+    draw('#3a1814', 24); draw('#b8584c', 14);
+    g.strokeStyle = 'rgba(255, 210, 190, 0.35)'; g.lineWidth = 4; g.beginPath(); g.moveTo(122, 70); g.lineTo(122, 200); g.stroke();
+    return texOf(c);
+  })());
+  /* 總分：金幣徽章（稱號＋圖示） */
+  R.badges = {};
+  R.badge = ti => R.badges[ti] || (R.badges[ti] = (() => {
+    const t0 = LG.THEMES.ocean.titles[ti] || LG.THEMES.ocean.titles[0];
+    const c = canvas(512), g = c.getContext('2d');
+    const gr = g.createRadialGradient(200, 160, 20, 256, 236, 220); gr.addColorStop(0, '#f2dc98'); gr.addColorStop(1, '#a87a28');
+    g.fillStyle = gr; g.beginPath(); g.arc(256, 236, 214, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = '#7a5418'; g.lineWidth = 10; g.stroke();
+    g.fillStyle = '#0b3440'; g.beginPath(); g.arc(256, 236, 178, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(223, 192, 108, 0.75)'; g.lineWidth = 6; g.setLineDash([14, 12]); g.beginPath(); g.arc(256, 236, 160, 0, Math.PI * 2); g.stroke(); g.setLineDash([]);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '118px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif'; g.fillText(t0[2], 256, 196);
+    g.font = '900 ' + (t0[1].length > 4 ? 50 : 58) + 'px "Microsoft JhengHei", "微軟正黑體", sans-serif'; g.fillStyle = '#e9d59c';
+    g.fillText(t0[1], 256, 306);
+    return texOf(c);
+  })());
+  R.coin = () => R._coin || (R._coin = new THREE.CylinderGeometry(0.17, 0.17, 0.05, 14).toNonIndexed());
+
+  /* 轉場 A：魚群繞著寫有關卡數字的大氣泡游一圈，再四散游走 */
+  FX.fishSchool = (L, zone, o) => {
+    const uc = U.UNIT_HEX[o.meta ? o.meta.unit : 1] || '#55c3c3';
+    const n = 64, mat = new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x0d3a40, emissiveIntensity: 0.6, transparent: true, side: DS() });
+    const B = Batch(R.fish(), n, mat);
+    const cy = L.hh * 0.3, P = [];
+    for (let i = 0; i < n; i++) {
+      P.push({ a: U.rand(0, Math.PI * 2), r: U.rand(2.3, 3.5), h: U.rand(-1, 1), w: U.rand(2.2, 3), s: U.rand(0.8, 1.3), ph: U.rand(0, 6) });
+      B.color(i, col(i % 3 === 0 ? uc : SEA[i % SEA.length]));
+    }
+    B.commitColor(); L.scene.add(B.mesh);
+    const tex = numBubble(o.num || 1, uc);
+    const bub = inkQuad(tex, 0xffffff); bub.position.set(0, cy, 0); L.scene.add(bub);
+    return {
+      dur: 1.95, weight: 2,
+      update(dt, t) {
+        const inK = U.ease.outCubic(U.clamp(t / 0.7, 0, 1)), out = U.clamp((t - 1.4) / 0.55, 0, 1);
+        for (let i = 0; i < n; i++) {
+          const p = P[i], a = p.a + p.w * t, r = p.r + (1 - inK) * 8 + U.ease.inCubic(out) * 10;
+          B.set(i, Math.cos(a) * r, cy + p.h + Math.sin(a) * 0.45 + Math.sin(t * 3 + p.ph) * 0.1, Math.sin(a) * r * 0.8,
+            0, 1, 0, -(a + Math.PI / 2) + 0.18 * Math.sin(t * 14 + p.ph), p.s);
+        }
+        B.commit();
+        mat.opacity = 1 - out;
+        const bk = U.ease.outBack(U.clamp((t - 0.15) / 0.6, 0, 1));
+        bub.scale.setScalar(Math.max(0.001, 3.3 * bk * (1 + 0.03 * Math.sin(t * 6))));
+        bub.position.y = cy + U.ease.inCubic(out) * 2.5;
+        bub.material.opacity = 1 - out;
+      },
+      dispose() { L.scene.remove(B.mesh); L.scene.remove(bub); B.dispose(); mat.dispose(); bub.material.dispose(); tex.dispose(); }
+    };
+  };
+
+  /* 答對 A：發出冷光的水母一縮一放地往上游 */
+  /* 水母貼圖：半透明的傘（邊緣較亮、下緣波浪）、裡面四個淡淡的圓、下方的口腕（白色，用材質顏色染色） */
+  R.jellyTex = () => R._jellyTex || (R._jellyTex = (() => {
+    const c = canvas(256), g = c.getContext('2d'), cx = 128, cy = 132, rx = 104, ry = 96;
+    const gr = g.createRadialGradient(cx, cy, 10, cx, cy, rx);
+    gr.addColorStop(0, 'rgba(255,255,255,0.12)'); gr.addColorStop(0.75, 'rgba(255,255,255,0.32)'); gr.addColorStop(1, 'rgba(255,255,255,0.75)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(cx, cy, rx, ry, 0, Math.PI, 0);
+    for (let i = 0; i < 8; i++) { const x = cx + rx - i * rx / 4; g.quadraticCurveTo(x - rx / 8, cy + 14, x - rx / 4, cy); }
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 5; g.beginPath(); g.ellipse(cx, cy, rx - 3, ry - 3, 0, Math.PI * 1.04, Math.PI * 1.96); g.stroke();
+    g.fillStyle = 'rgba(255,255,255,0.28)';
+    [[-36, -20], [36, -20], [-14, -46], [14, -46]].forEach(([x, y]) => { g.beginPath(); g.ellipse(cx + x, cy + y, 16, 11, 0, 0, Math.PI * 2); g.fill(); });
+    g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineWidth = 7; g.lineCap = 'round';
+    [-22, 0, 22].forEach((x, k) => { g.beginPath(); g.moveTo(cx + x, cy + 8); for (let y = 0; y <= 100; y += 10) g.lineTo(cx + x + Math.sin(y * 0.09 + k) * 9, cy + 8 + y); g.stroke(); });
+    return texOf(c);
+  })());
+  FX.jellyfish = (L, zone, o) => {
+    const c = W(L, o.x, o.y), aspect = L.w / L.h, NJ = 6, NT = 4, NP = 9, NPTS = NJ * NT * NP;
+    const pos = new Float32Array(NPTS * 3), colr = new Float32Array(NPTS * 3), J = [];
+    const spread = Math.min(3, L.hh * aspect * 0.7);
+    for (let j = 0; j < NJ; j++) {
+      const cc = col(SEA[j % SEA.length]);
+      const bell = inkQuad(R.jellyTex(), cc, { blending: THREE.AdditiveBlending, opacity: 0 }), bm = bell.material;
+      bell.scale.setScalar(2.2);
+      const glow = glowQuad(cc); glow.scale.setScalar(2.4); glow.position.y = 0.25;
+      const grp = new THREE.Group(); grp.add(glow, bell); L.scene.add(grp);
+      J.push({ grp, bm, glow, x: c[0] + (j / (NJ - 1) - 0.5) * 2 * spread + U.rand(-0.3, 0.3), y: c[1] - U.rand(0.2, 1.4), s: U.rand(0.5, 0.75), ph: U.rand(0, 6), d: U.rand(0, 0.4), vy: U.rand(1.3, 1.9) });
+      for (let k = 0; k < NT * NP; k++) colr.set([cc.r, cc.g, cc.b], (j * NT * NP + k) * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+    const pm = pointsMat(0.12, { opacity: 0 }); const pts = new THREE.Points(geo, pm); pts.frustumCulled = false; L.scene.add(pts);
+    return {
+      dur: 2.3, weight: 2,
+      update(dt, t) {
+        const fade = U.clamp((this.dur - t) / 0.55, 0, 1);
+        J.forEach((q, j) => {
+          const lt = Math.max(0, t - q.d), on = t > q.d ? Math.min(1, lt / 0.3) : 0;
+          const k = 0.5 + 0.5 * Math.sin(lt * 7 + q.ph);               // 1＝收縮
+          const gx = q.x + Math.sin(lt * 1.6 + q.ph) * 0.2, gy = q.y + lt * q.vy + 0.18 * Math.sin(lt * 7 + q.ph);
+          q.grp.position.set(gx, gy, 1);
+          q.grp.scale.set(q.s * (1.06 - 0.16 * k), q.s * (0.9 + 0.16 * k), q.s);
+          q.grp.rotation.z = 0.15 * Math.sin(lt * 1.6 + q.ph);
+          q.bm.opacity = 0.8 * on * fade; q.glow.material.opacity = 0.22 * on * fade;
+          for (let a = 0; a < NT; a++) for (let b = 0; b < NP; b++) {
+            const i = ((j * NT + a) * NP + b) * 3, bx = (a / (NT - 1) - 0.5) * 1.6 * q.s;
+            pos[i] = gx + bx + Math.sin(lt * 6 - b * 0.6 + a) * 0.05 * b * q.s; pos[i + 1] = on ? gy - 0.15 * q.s - (b + 1) * 0.2 * q.s : -999; pos[i + 2] = 1;
+          }
+        });
+        geo.attributes.position.needsUpdate = true; pm.opacity = 0.75 * fade;
+      },
+      dispose() { J.forEach(q => { L.scene.remove(q.grp); q.bm.dispose(); q.glow.material.dispose(); }); L.scene.remove(pts); geo.dispose(); pm.dispose(); }
+    };
+  };
+
+  /* 答對 B：浮游生物的冷光爆開、打轉，再流進分數欄 */
+  FX.plankton = (L, zone, o) => {
+    const n = 220, c = W(L, o.x, o.y), tgt = W(L, o.tx, o.ty);
+    const pos = new Float32Array(n * 3), colr = new Float32Array(n * 3), P = [];
+    for (let i = 0; i < n; i++) {
+      const v = rndAxis().multiplyScalar(U.rand(1.5, 4)), cc = col(SEA[i % 3]);
+      pos.set([c[0], c[1], 0], i * 3); colr.set([cc.r, cc.g, cc.b], i * 3);
+      P.push({ v, delay: U.rand(0, 0.35), mid: null, sp: U.rand(0, 6) });
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+    const pm = pointsMat(0.24); const pts = new THREE.Points(geo, pm); pts.frustumCulled = false; L.scene.add(pts);
+    const flash = glowQuad(col('#55c3c3')); flash.position.set(c[0], c[1], 0.5); L.scene.add(flash);
+    const T = V3(tgt[0], tgt[1], 1), tmp = V3(0, 0, 0);
+    return {
+      dur: 1.9, weight: 1,
+      update(dt, t) {
+        const fs = U.clamp(1 - t / 0.4, 0, 1);
+        flash.scale.setScalar(1.2 + 6 * (1 - fs)); flash.material.opacity = 0.45 * fs;
+        const damp = Math.exp(-2.6 * dt);
+        for (let i = 0; i < n; i++) {
+          const p = P[i], j = i * 3;
+          if (t < 0.7) {
+            const dx = pos[j] - c[0], dy = pos[j + 1] - c[1];
+            p.v.multiplyScalar(damp); p.v.x += -dy * 2.2 * dt; p.v.y += dx * 2.2 * dt;   // 打轉
+            pos[j] += p.v.x * dt; pos[j + 1] += p.v.y * dt; pos[j + 2] += p.v.z * dt;
+          } else {
+            if (!p.mid) p.mid = V3(pos[j], pos[j + 1], pos[j + 2]);
+            const u = U.clamp((t - 0.7 - p.delay) / 0.75, 0, 1), e = U.ease.inOutCubic(u), sw = Math.sin(u * Math.PI) * 0.6;
+            tmp.lerpVectors(p.mid, T, e);
+            pos[j] = tmp.x + Math.cos(u * 8 + p.sp) * sw; pos[j + 1] = tmp.y + Math.sin(u * 8 + p.sp) * sw; pos[j + 2] = tmp.z;
+          }
+        }
+        geo.attributes.position.needsUpdate = true;
+        pm.opacity = 0.85 * U.clamp((this.dur - t) / 0.25, 0, 1);
+      },
+      dispose() { L.scene.remove(pts); L.scene.remove(flash); geo.dispose(); pm.dispose(); flash.material.dispose(); }
+    };
+  };
+
+  /* 答錯 A：錨沉下來「咚」一聲落地，揚起沙塵（畫面被水流推一下） */
+  FX.anchor = (L, zone, o) => {
+    const c = W(L, o.x, o.y), top = L.hh + 2.5, land = 0.45;
+    const q = inkQuad(R.anchorTex(), 0xffffff); q.scale.setScalar(2.6); q.position.set(c[0], top, 1.2); L.scene.add(q);
+    const rope = new THREE.Mesh(R.unit(), basicMat(col('#5f8a8f'), { depthWrite: false })); L.scene.add(rope);
+    const N = 70, pos = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) pos[i * 3 + 1] = -999;
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const pm = new THREE.PointsMaterial({ size: 0.34, map: R.glow(), color: col('#a8936a'), transparent: true, depthWrite: false, opacity: 0.7 });
+    const sand = new THREE.Points(geo, pm); sand.frustumCulled = false; L.scene.add(sand);
+    let landed = false;
+    return {
+      dur: 1.75, weight: 1,
+      update(dt, t) {
+        let y;
+        if (t < land) { const k = U.ease.inCubic(t / land); y = top + (c[1] - top) * k; q.rotation.z = 0.3 * (1 - k); }
+        else {
+          const lt = t - land; y = c[1] + 0.3 * Math.exp(-lt * 6) * Math.abs(Math.sin(lt * 14)); q.rotation.z = 0.12 * Math.exp(-lt * 3) * Math.sin(lt * 9);
+          if (!landed) {
+            landed = true; cssPulse(zone.stage, 'sway', 800);
+            for (let i = 0; i < N; i++) {
+              const j = i * 3; pos[j] = c[0] + U.rand(-0.5, 0.5); pos[j + 1] = c[1] - 1.1; pos[j + 2] = 1.3;
+              vel[j] = U.rand(-3.2, 3.2); vel[j + 1] = U.rand(0.4, 2.6); vel[j + 2] = U.rand(-0.5, 0.5);
+            }
+          }
+          const damp = Math.exp(-2.2 * dt);
+          for (let i = 0; i < N; i++) { const j = i * 3; vel[j] *= damp; vel[j + 1] = vel[j + 1] * damp - 1.2 * dt; pos[j] += vel[j] * dt; pos[j + 1] += vel[j + 1] * dt; pos[j + 2] += vel[j + 2] * dt; }
+          geo.attributes.position.needsUpdate = true;
+        }
+        q.position.y = y;
+        const ry = y + 1.1, len = Math.max(0.01, top + 4 - ry);   // 錨上方的繩子
+        rope.scale.set(0.07, len, 1); rope.position.set(c[0], ry + len / 2, 1.1);
+        const a = U.clamp((this.dur - t) / 0.45, 0, 1); q.material.opacity = a; rope.material.opacity = a * 0.8; pm.opacity = 0.7 * a;
+      },
+      dispose() { L.scene.remove(q); L.scene.remove(rope); L.scene.remove(sand); q.material.dispose(); rope.material.dispose(); geo.dispose(); pm.dispose(); }
+    };
+  };
+
+  /* 答錯 B：珊瑚紅的氣泡排成 ✕，抖一抖之後往上浮、破掉 */
+  FX.bubbleX = (L, zone, o) => {
+    cssPulse(zone.stage, 'sway', 800);
+    const c = W(L, o.x, o.y), m = 9, items = [];
+    for (let d = 0; d < 2; d++) for (let i = 0; i < m; i++) {
+      const u = i / (m - 1) - 0.5, q = inkQuad(R.bubbleTex(), col('#ec8a7c'));
+      q.userData = { x: c[0] + u * 2.8, y: c[1] + (d ? -u : u) * 2.8, d: (d * m + i) * 0.03, s: U.rand(0.6, 0.85), ph: U.rand(0, 6), pop: U.rand(1.15, 1.6) };
+      q.position.set(q.userData.x, q.userData.y, 1.3 + items.length * 0.005); L.scene.add(q); items.push(q);
+    }
+    return {
+      dur: 1.75, weight: 1,
+      update(dt, t) {
+        for (const q of items) {
+          const u = q.userData, lt = t - u.d;
+          if (lt < 0) { q.material.opacity = 0; continue; }
+          const rise = Math.max(0, t - 0.9), pk = U.clamp((t - u.pop) / 0.12, 0, 1);
+          q.position.set(u.x + Math.sin(t * 9 + u.ph) * 0.05 + Math.sin(rise * 4 + u.ph) * 0.2 * rise, u.y + rise * rise * 2.4, q.position.z);
+          q.scale.setScalar(Math.max(0.001, u.s * U.ease.outBack(U.clamp(lt / 0.25, 0, 1)) * (1 + 0.5 * pk)));
+          q.material.opacity = 0.95 * (1 - pk);
+        }
+      },
+      dispose() { items.forEach(q => { L.scene.remove(q); q.material.dispose(); }); }
+    };
+  };
+
+  /* 求救 A：鮟鱇魚的小燈從上方垂下來，照亮提示框 */
+  FX.lure = (L, zone, o) => {
+    cssPulse(zone.scr && zone.scr.hint, 'rise3d', 750);
+    const c = W(L, o.x, o.y), pts = [];
+    for (let i = 0; i <= 24; i++) { const s = i / 24; pts.push([1.1 * s + 0.35 * Math.sin(s * Math.PI), -2.4 * s * s - 0.2 * s]); }
+    const bx = pts[24][0], by = pts[24][1];
+    const sg = tube(pts, 0.05, 8), sm = new THREE.MeshLambertMaterial({ color: col('#4a8a90'), emissive: col('#14363b'), transparent: true });
+    const stalk = new THREE.Mesh(sg, sm);
+    const bulb = glowQuad(col('#dfc06c')); bulb.position.set(bx, by, 0.1); bulb.scale.setScalar(1.7);
+    const core = new THREE.Mesh(R._lureCore || (R._lureCore = new THREE.SphereGeometry(0.15, 12, 8)), basicMat(col('#f1e2a6')));
+    core.position.set(bx, by, 0.12);
+    const cm = basicMat(col('#a8e0d8'), { blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
+    const cone = new THREE.Mesh(R.cone(), cm); cone.scale.set(0.9, 0.5, 0.9); cone.position.set(bx, by - 1.62, -0.5);
+    const grp = new THREE.Group(); grp.add(cone, stalk, bulb, core); L.scene.add(grp);
+    const gx = c[0] - bx, gy = c[1] + 1.7 - by;
+    return {
+      dur: 1.4, weight: 0.5,
+      update(dt, t) {
+        const k = U.ease.outBack(U.clamp(t / 0.45, 0, 1)), a = U.clamp((this.dur - t) / 0.4, 0, 1);
+        grp.position.set(gx, gy + (1 - k) * 4, 1); grp.rotation.z = 0.1 * Math.sin(t * 3);
+        bulb.material.opacity = (0.55 + 0.15 * Math.sin(t * 12)) * a; core.material.opacity = a; sm.opacity = a;
+        cm.opacity = 0.1 * Math.min(1, t / 0.35) * a;
+      },
+      dispose() { L.scene.remove(grp); sg.dispose(); sm.dispose(); bulb.material.dispose(); core.material.dispose(); cm.dispose(); }
+    };
+  };
+
+  /* 求救 B：提示框翻面，一圈小氣泡繞著轉 */
+  FX.bubbleRing = (L, zone, o) => {
+    cssPulse(zone.scr && zone.scr.hint, 'flip3d', 700);
+    const c = W(L, o.x, o.y), sp = candySparkles(L, c[0], c[1], 1.7, 34, R.bubbleTex(), SEA);
+    return { dur: 1.2, weight: 0.5, update(dt, t) { sp.update(t, U.clamp((this.dur - t) / 0.4, 0, 1)); }, dispose() { sp.dispose(); } };
+  };
+
+  /* 總分 A：寶箱打開，金幣噴出來，稱號金幣徽章升起 */
+  FX.treasure = (L, zone, o) => {
+    const c = W(L, o.x, o.y), edge = L.hh * (L.w / L.h) - 2.3;
+    c[0] = Math.min(c[0], edge);
+    const wood = new THREE.MeshLambertMaterial({ color: col('#7a4b2a'), emissive: col('#2a160a'), emissiveIntensity: 0.5 });
+    const gold = new THREE.MeshLambertMaterial({ color: col('#dfc06c'), emissive: col('#5a4410'), emissiveIntensity: 0.5 });
+    const box = R._chestBox || (R._chestBox = new THREE.BoxGeometry(2.4, 1.2, 1.5));
+    const lidG = R._chestLid || (R._chestLid = new THREE.BoxGeometry(2.4, 0.5, 1.5));
+    const band = R._chestBand || (R._chestBand = new THREE.BoxGeometry(0.22, 1.24, 1.54));
+    const lidBand = R._chestLidBand || (R._chestLidBand = new THREE.BoxGeometry(0.22, 0.54, 1.54));
+    const lock = R._chestLock || (R._chestLock = new THREE.BoxGeometry(0.34, 0.4, 0.12));
+    const chest = new THREE.Group();
+    chest.add(new THREE.Mesh(box, wood));
+    [-0.8, 0.8].forEach(x => { const b = new THREE.Mesh(band, gold); b.position.x = x; chest.add(b); });
+    const lk = new THREE.Mesh(lock, gold); lk.position.set(0, 0.32, 0.8); chest.add(lk);
+    const hinge = new THREE.Group(); hinge.position.set(0, 0.6, -0.75); chest.add(hinge);
+    const lid = new THREE.Mesh(lidG, wood); lid.position.set(0, 0.25, 0.75); hinge.add(lid);
+    [-0.8, 0.8].forEach(x => { const b = new THREE.Mesh(lidBand, gold); b.position.set(x, 0.25, 0.75); hinge.add(b); });
+    // 寶箱放在總分畫面下方的空白處（不蓋住分數），徽章從寶箱升到稱號附近
+    const base = V3(c[0], Math.max(c[1] - 5.6, -L.hh + 1.7), 0.5);
+    chest.position.copy(base); chest.rotation.set(0.28, -0.35, 0); L.scene.add(chest);
+    const shine = glowQuad(col('#dfc06c')); shine.position.set(base.x, base.y + 0.9, 1.6); shine.material.opacity = 0; L.scene.add(shine);
+    const n = 40, cmat = new THREE.MeshLambertMaterial({ color: col('#e3c46c'), emissive: col('#6a5014'), emissiveIntensity: 0.6, transparent: true });
+    const B = Batch(R.coin(), n, cmat), P = [];
+    for (let i = 0; i < n; i++) P.push({ p: V3(base.x, base.y + 0.7, 1), v: V3(U.rand(-2.4, 2.4), U.rand(4.5, 7.5), U.rand(-0.5, 1.5)), ax: rndAxis(), ang: 0, w: U.rand(5, 12), d: U.rand(0.7, 1.4) });
+    L.scene.add(B.mesh);
+    const badge = inkQuad(R.badge(o.tier || 0), 0xffffff); badge.position.set(c[0], base.y, 1.8); L.scene.add(badge);
+    return {
+      dur: 4.4, weight: 2,
+      update(dt, t) {
+        const k = U.ease.outBack(U.clamp(t / 0.6, 0, 1)), out = U.clamp((t - 3.7) / 0.7, 0, 1), shrink = 1 - U.ease.inCubic(out);
+        chest.scale.setScalar(Math.max(0.001, 0.8 * k * shrink));
+        hinge.rotation.x = -1.9 * U.ease.outBack(U.clamp((t - 0.6) / 0.4, 0, 1));
+        shine.scale.setScalar(3.2 + 0.3 * Math.sin(t * 5)); shine.material.opacity = 0.45 * U.clamp((t - 0.7) / 0.3, 0, 1) * shrink;
+        for (let i = 0; i < n; i++) {
+          const p = P[i], lt = t - p.d;
+          if (lt < 0) { B.set(i, p.p.x, p.p.y, p.p.z, 1, 0, 0, 0, 0.001); continue; }
+          p.v.y -= 9 * dt; p.p.addScaledVector(p.v, dt); p.ang += p.w * dt;
+          B.set(i, p.p.x, p.p.y, p.p.z, p.ax.x, p.ax.y, p.ax.z, p.ang, 1.4);
+        }
+        B.commit(); cmat.opacity = shrink;
+        const bk = U.clamp((t - 0.95) / 0.85, 0, 1);
+        badge.position.y = base.y + (c[1] - 0.4 - base.y) * U.ease.outCubic(bk);
+        badge.scale.setScalar(Math.max(0.001, 3.4 * U.ease.outBack(bk) * shrink));
+        badge.rotation.y = (1 - U.ease.outCubic(bk)) * Math.PI * 4 + 0.15 * Math.sin(t * 1.6) * bk;
+      },
+      dispose() { L.scene.remove(chest); L.scene.remove(shine); L.scene.remove(B.mesh); L.scene.remove(badge); wood.dispose(); gold.dispose(); shine.material.dispose(); B.dispose(); cmat.dispose(); badge.material.dispose(); }
+    };
+  };
+
+  /* 總分 B：深海冷光煙火（光點升起、綻開，然後像浮游生物一樣慢慢往上飄） */
+  FX.glowWorks = (L, zone, o) => {
+    const shells = o.shells || 2, per = 200, N = shells * per, aspect = L.w / L.h;
+    const pos = new Float32Array(N * 3), colr = new Float32Array(N * 3), vel = new Float32Array(N * 3);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(colr, 3));
+    const pm = pointsMat(0.28); const pts = new THREE.Points(geo, pm); pts.frustumCulled = false; L.scene.add(pts);
+    const S = [];
+    for (let s = 0; s < shells; s++) {
+      const c1 = col(SEA[(s * 2) % SEA.length]), c2 = col(SEA[(s * 2 + 1) % SEA.length]);
+      S.push({ t0: s * 0.55, x: U.rand(-0.55, 0.55) * L.hh * aspect, y: U.rand(0.1, 0.45) * L.hh, burst: false });
+      for (let i = 0; i < per; i++) { const j = (s * per + i) * 3, cc = i % 2 ? c1 : c2; pos[j + 1] = -999; colr.set([cc.r, cc.g, cc.b], j); }
+    }
+    return {
+      dur: 1.2 + shells * 0.55 + 1.8, weight: 2,
+      update(dt, t) {
+        for (let s = 0; s < shells; s++) {
+          const sh = S[s], lt = t - sh.t0;
+          if (lt < 0) continue;
+          if (lt < 0.6) { const j = s * per * 3, k = lt / 0.6; pos[j] = sh.x + Math.sin(lt * 10) * 0.1; pos[j + 1] = -L.hh + (sh.y + L.hh) * U.ease.outCubic(k); pos[j + 2] = 0; continue; }
+          if (!sh.burst) {
+            sh.burst = true;
+            for (let i = 0; i < per; i++) {
+              const j = (s * per + i) * 3, u = U.rand(-1, 1), a = U.rand(0, Math.PI * 2), r = Math.sqrt(1 - u * u), sp = U.rand(2.6, 4.2);
+              pos[j] = sh.x; pos[j + 1] = sh.y; pos[j + 2] = 0; vel[j] = r * Math.cos(a) * sp; vel[j + 1] = u * sp; vel[j + 2] = r * Math.sin(a) * sp;
+            }
+          }
+          for (let i = 0; i < per; i++) {
+            const j = (s * per + i) * 3, damp = Math.exp(-2.2 * dt);
+            vel[j] *= damp; vel[j + 1] = vel[j + 1] * damp + 0.7 * dt; vel[j + 2] *= damp;   // 浮力：慢慢往上飄
+            pos[j] += vel[j] * dt + Math.sin(t * 2 + i) * 0.25 * dt; pos[j + 1] += vel[j + 1] * dt; pos[j + 2] += vel[j + 2] * dt;
+          }
+        }
+        geo.attributes.position.needsUpdate = true;
+        pm.opacity = 0.8 * U.clamp((this.dur - t) / 0.8, 0, 1);
+      },
+      dispose() { L.scene.remove(pts); geo.dispose(); pm.dispose(); }
+    };
+  };
+
   /* CSS 3D 小動畫（幾乎不耗效能） */
   function cssPulse(el, cls, ms) {
     if (!el) return;
@@ -1260,10 +1629,19 @@
     help: ['twinkle', 'hearts'],
     result: ['medal', 'candyWorks']
   };
-  const FXSETS = { tech: EVENTS, ink: EVENTS_INK, pastel: EVENTS_PASTEL };
+  /* 深海風格的兩種特效 */
+  const EVENTS_OCEAN = {
+    trans: ['fishSchool', 'tube'],
+    correct: ['jellyfish', 'plankton'],
+    wrong: ['anchor', 'bubbleX'],
+    help: ['lure', 'bubbleRing'],
+    result: ['treasure', 'glowWorks']
+  };
+  const FXSETS = { tech: EVENTS, ink: EVENTS_INK, pastel: EVENTS_PASTEL, ocean: EVENTS_OCEAN };
   const WEIGHT = { cubes: 2, tube: 1, confetti: 2, shards: 2, shatter: 1, symbols: 1, helpFlip: 0.5, helpSpot: 0.5, trophy: 2, fireworks: 2,
     inkDrop: 1, petals: 2, seal: 1, splash: 1, brushX: 1, scroll: 0.5, hintSeal: 0.5, sealResult: 2, plum: 2,
-    balloons: 2, stars: 2, bubbles: 1, rainCloud: 1, jellyX: 1, twinkle: 0.5, hearts: 0.5, medal: 2, candyWorks: 2 };
+    balloons: 2, stars: 2, bubbles: 1, rainCloud: 1, jellyX: 1, twinkle: 0.5, hearts: 0.5, medal: 2, candyWorks: 2,
+    fishSchool: 2, jellyfish: 2, plankton: 1, anchor: 1, bubbleX: 1, lure: 0.5, bubbleRing: 0.5, treasure: 2, glowWorks: 2 };
   const load = () => F.active.reduce((s, e) => s + (e.weight || 1), 0);
 
   /* 依時機整理出位置資訊 */

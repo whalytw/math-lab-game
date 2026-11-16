@@ -11,11 +11,12 @@
     book: '3A',           // 冊數：1A 一上、3A 二上A版、3B 二上B版
     units: { '3A': [5, 6, 7] }, // 各冊勾選的出題單元（可複選）
     count: 8,             // 每位同學的總題數（關數，預設 8）
+    mechOff: [],          // 關掉的玩法（玩法代號，例如 'tiles'）；空陣列 = 全部開啟
     dragDist: 'mid',      // 拖曳啟動距離
     tapTol: 'mid',        // 點擊容錯範圍
     palm: 'normal',       // 手掌誤觸過濾
     renderScale: 1,       // 畫面解析度比例
-    theme: 'tech',        // 介面風格：tech 科技、ink 水墨、pastel 粉彩
+    theme: 'tech',        // 介面風格：tech 科技、ink 水墨、pastel 粉彩、ocean 深海
     fx: 'rich',           // 特效：rich 華麗（預設）、full 完整、lite 精簡
     fxVer: 3,             // 設定版本：預設值改過時，舊版存的「舊預設值」會在第一次載入時改成新預設值（見 S.load）
     volume: 0.7,          // 音量
@@ -31,11 +32,12 @@
     book: v => typeof v === "string" && /^[0-9A-Za-z]{1,8}$/.test(v),
     units: v => !!v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).every(k => Array.isArray(v[k]) && v[k].every(u => Number.isInteger(u) && u >= 1 && u <= 30) && new Set(v[k]).size === v[k].length),
     count: v => Number.isInteger(v) && v >= 3 && v <= 12,
+    mechOff: v => Array.isArray(v) && v.every(m => typeof m === 'string' && /^[a-z]{1,12}$/.test(m)) && new Set(v).size === v.length,
     dragDist: v => ['small', 'mid', 'large'].includes(v),
     tapTol: v => ['small', 'mid', 'large'].includes(v),
     palm: v => ['off', 'normal', 'strict'].includes(v),
     renderScale: v => [1, 0.75, 0.5].includes(v),
-    theme: v => ['tech', 'ink', 'pastel'].includes(v),
+    theme: v => ['tech', 'ink', 'pastel', 'ocean'].includes(v),
     fx: v => ['rich', 'full', 'lite'].includes(v),
     fxVer: v => Number.isInteger(v),
     volume: v => [0, 0.35, 0.7, 1].includes(v),

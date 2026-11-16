@@ -193,3 +193,14 @@
   80% { transform: scale(0.99, 1.01); }
   100% { transform: scale(1, 1); }
 }
+
+/* ---------- 新玩法（切切樂、排序輸送帶、座標尋寶、公式拼圖） ---------- */
+.theme-pastel .tl-eq { background: rgba(255, 255, 255, 0.85); border: 0; border-radius: 1em; box-shadow: 0 0.25em 0.9em rgba(155, 114, 214, 0.18); }
+.theme-pastel .tl-slot { border-radius: 0.6em; background: color-mix(in srgb, var(--uc) 10%, #ffffff); }
+.theme-pastel .tl-tile { background: #ffffff; border-color: rgba(155, 114, 214, 0.3); border-radius: 0.7em; box-shadow: 0 0.2em 0 rgba(155, 114, 214, 0.25); }
+.theme-pastel .tl-slot .tl-tile { background: color-mix(in srgb, var(--uc) 16%, #ffffff); box-shadow: none; }
+.theme-pastel .pt-tag { background: rgba(255, 255, 255, 0.95); border-radius: 999px; }
+.theme-pastel .sl-pill { background: radial-gradient(ellipse at 30% 25%, rgba(255, 255, 255, 0.95), transparent 55%), color-mix(in srgb, var(--uc) 18%, #ffffff); box-shadow: 0 0.3em 0.8em rgba(155, 114, 214, 0.25); }
+.theme-pastel .sl-v { color: #c2477a; }
+.theme-pastel .or-card { background: #ffffff; border-color: rgba(155, 114, 214, 0.3); border-radius: 0.9em; box-shadow: 0 0.2em 0.6em rgba(155, 114, 214, 0.15); }
+.theme-pastel .or-card.lift { background: color-mix(in srgb, var(--uc) 14%, #ffffff); }

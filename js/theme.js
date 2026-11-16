@@ -84,6 +84,33 @@
       }
     }
   };
+  /* 深海：暗色、低亮度。學生站在大螢幕前不刺眼——底色深藍綠、文字不用純白、
+     沒有大面積亮色（按鈕改成深色底＋彩色邊框）、發光特效亮度壓低。 */
+  THEMES.ocean = {
+    id: 'ocean', label: '深海', brush: false, soft: true, blend: 'lighter', confetti: 'bubble',
+    // 珊瑚、海藍、海草綠、沙橘、沙金、海葵粉、湖水綠、薰衣草、長春花藍、海帶綠（中等彩度，不刺眼）
+    units: { 1: '#ec8a7c', 2: '#6fa9e3', 3: '#5fc99c', 4: '#e2a46e', 5: '#dfc06c', 6: '#d58bb2', 7: '#55c3c3', 8: '#ad9bd6', 9: '#80a3d6', 10: '#a3c86c' },
+    titles: [[0.8, '深海霸主', '🐋'], [0.6, '潛水大師', '🐬'], [0.4, '海洋研究員', '🐠'], [0.2, '潛水學徒', '🐢'], [0, '海邊見習生', '🐚']],
+    c: {
+      fg: '#cfe1e3', ok: '#62cf98', bad: '#ec7f6f', warn: '#dfc06c',
+      panel: 'rgba(3, 20, 26, 0.66)', grid: 'rgba(110, 190, 200, 0.11)', axis: 'rgba(207, 225, 227, 0.72)',
+      tick: 'rgba(165, 200, 205, 0.82)', axisName: 'rgba(207, 225, 227, 0.86)',
+      trAxis: 'rgba(185, 222, 226, 0.78)', tip: '#e2f0f1',
+      wires: ['#ec8a7c', '#6fa9e3', '#dfc06c', '#5fc99c'], trail: '170, 235, 228',
+      burst: ['#55c3c3', '#5fc99c', '#dfc06c', '#d58bb2'], confetti: ['#55c3c3', '#7fd3c8', '#dfc06c', '#ec8a7c', '#ad9bd6', '#9fd0e6'],
+      fly: '#55c3c3', flyHead: '#c8f3ee',
+      portal: '#7fcfcf', portal2: '#aee3df', ref: 'rgba(207,225,227,0.68)', halo: 'rgba(110,190,200,0.16)',
+      touch: 'rgba(110, 190, 200, 0.3)'
+    },
+    dom: {
+      bg: 0x05202a, fogNear: 14, fogFar: 46, hemiSky: 0xb8e2e6, hemiGround: 0x123038, hemi: 1.1,
+      ground: '#0a2d35', groundLine: 'rgba(110, 190, 200, 0.12)', groundLine2: 'rgba(110, 190, 200, 0.34)',
+      stars: true, glass: 0x2f8481, glassEm: 0x08292a, gold: 0xdfc06c, edge: 0x05202a,
+      dominos: [0xec8a7c, 0x55c3c3, 0xdfc06c, 0xb8cfd2], fireworks: [0x55c3c3, 0xdfc06c, 0xd58bb2],
+      sky2d: ['#062631', '#0a3a45'], gold2d: '#dfc06c', glass2d: '#2f8481', fw2d: ['#55c3c3', '#dfc06c', '#d58bb2'],
+      dominos2d: ['#ec8a7c', '#55c3c3', '#dfc06c', '#b8cfd2'], line2d: 'rgba(110,190,200,.45)'
+    }
+  };
   THEMES.ink.light = true; THEMES.ink.confetti = 'petal'; THEMES.tech.confetti = 'rect';
   LG.THEMES = THEMES;
   LG.theme = THEMES.tech;

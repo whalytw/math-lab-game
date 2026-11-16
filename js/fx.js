@@ -53,7 +53,7 @@
           drag: o.drag == null ? 1.4 : o.drag,
           shape: o.shape || 'dot',
           rot: U.rand(0, 6.28), vr: U.rand(-9, 9),
-          glow: o.shape !== 'rect' && o.shape !== 'petal' && o.shape !== 'star'
+          glow: o.shape !== 'rect' && o.shape !== 'petal' && o.shape !== 'star' && o.shape !== 'bubble'
         });
       }
     }
@@ -64,7 +64,8 @@
       if (!o.force && LG.settings.data.fx === 'rich' && LG.fx3d && LG.fx3d.enabled()) return;
       this.burst(x, y, Object.assign({
         n: 46, shape: LG.theme.confetti || 'rect', angle: -Math.PI / 2, spread: 1.15, keep: true,
-        speed: [260, 720], life: [1.0, 1.8], size: [6, 12], gravity: 900, drag: 1.2,
+        speed: [260, 720], life: [1.0, 1.8], size: [6, 12], drag: 1.2,
+        gravity: LG.theme.confetti === 'bubble' ? -260 : 900,   // 深海：氣泡往上浮
         colors: LG.TC('confetti')
       }, o));
     }
@@ -134,6 +135,14 @@
           for (let j = 0; j < 10; j++) { const a = -Math.PI / 2 + j * Math.PI / 5, r = j % 2 ? R2 : R1; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
           g.closePath(); g.lineJoin = 'round'; g.lineWidth = p.size * 0.18; g.strokeStyle = p.color; g.fill(); g.stroke();
           g.restore();
+        } else if (p.shape === 'bubble') {
+          // 深海風格：小氣泡（彩色細圈＋亮點），不發光
+          g.globalCompositeOperation = 'source-over';
+          const r = p.size * 0.42;
+          g.lineWidth = Math.max(1, p.size * 0.12); g.strokeStyle = p.color;
+          g.beginPath(); g.arc(p.x, p.y, r, 0, Math.PI * 2); g.stroke();
+          g.globalAlpha *= 0.25; g.fill(); g.globalAlpha /= 0.25;
+          g.fillStyle = 'rgba(230, 250, 248, 0.8)'; g.beginPath(); g.arc(p.x - r * 0.38, p.y - r * 0.38, r * 0.22, 0, Math.PI * 2); g.fill();
         } else {
           g.globalCompositeOperation = LG.theme.blend;
           g.beginPath(); g.arc(p.x, p.y, p.size * (0.4 + 0.6 * k), 0, Math.PI * 2); g.fill();
