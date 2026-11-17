@@ -37,12 +37,16 @@
       });
       this.slots.forEach(s => LG.input.onTap(s.el, () => this.tapSlot(s), { sound: false, enabled: () => this.playing }));
       this.pick = null;
+      this.how = '把拼圖塊拖進虛線框（或點塊再點框）';
       this.setGo('完成！', () => this.go());
       this.setGoEnabled(false);
     }
 
     layout() {
-      U.fit(this.row, 0.45, true);
+      // 先縮字；縮到下限還放不下時，允許在算式片段之間換成兩行
+      this.row.classList.remove('wrap');
+      U.fit(this.row, 0.6, true);
+      if (this.row.scrollWidth > this.row.clientWidth + 1) { this.row.classList.add('wrap'); U.fit(this.row, 0.5, true); }
     }
 
     bindTile(t) {

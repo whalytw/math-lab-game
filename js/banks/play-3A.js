@@ -43,7 +43,7 @@
     })
   ]);
   add(1, 'tiles', [
-    T('完成扇形的公式（半徑 $r$、圓心角 $\\theta$ 弳）', '\\text{弧長}\\ s=@,\\quad \\text{面積}\\ A=@', ['r\\theta', '\\dfrac12r^{2}\\theta'], ['\\dfrac12r\\theta', 'r^{2}\\theta', '2\\pi r'],
+    T('完成扇形的公式：半徑 $r$、圓心角 $\\theta$ 弳，弧長 $s$、面積 $A$', 's=@,\\quad A=@', ['r\\theta', '\\dfrac12r^{2}\\theta'], ['\\dfrac12r\\theta', 'r^{2}\\theta', '2\\pi r'],
       '$\\theta$ 要用弳', '$s=r\\theta$、$A=\\frac12r^{2}\\theta=\\frac12rs$'),
     G(() => {
       const [d1, d2] = sample([30, 45, 60, 120, 135, 150, 210, 240, 270, 300, 330], 2);
@@ -59,7 +59,7 @@
   }, tag);
   add(2, 'order', [trigOrder(Math.sin, 'sin', ''), trigOrder(Math.cos, 'cos', 'cos')]);
   add(2, 'tiles', [
-    T('寫出振幅與週期', 'y=a\\sin(bx+c)+d\\ \\text{的振幅}=@,\\ \\text{週期}=@', ['|a|', '\\dfrac{2\\pi}{|b|}'], ['a', '\\dfrac{\\pi}{|b|}', '2\\pi|b|', '|d|'],
+    T('寫出 $y=a\\sin(bx+c)+d$ 的振幅與週期', '\\text{振幅}=@,\\quad \\text{週期}=@', ['|a|', '\\dfrac{2\\pi}{|b|}'], ['a', '\\dfrac{\\pi}{|b|}', '2\\pi|b|', '|d|'],
       '振幅看 $\\sin$ 前面的係數，週期看 $x$ 的係數', '振幅 $|a|$、週期 $\\frac{2\\pi}{|b|}$'),
     G(() => {
       const A = ri(2, 5), B = pick([1, 2, 3, 4, 6]);
@@ -104,7 +104,7 @@
       '$r=\\sqrt{a^{2}+b^{2}}$，$\\cos\\theta=\\frac{a}{r}$、$\\sin\\theta=\\frac{b}{r}$', '$a\\sin x+b\\cos x=\\sqrt{a^{2}+b^{2}}\\sin(x+\\theta)$'),
     G(() => {
       const [a, b0, r] = pick(AB.filter(x => x[2])), b = b0 * pick([1, -1]);
-      return T('寫出最大值與最小值', `${lin(a, b)}\\ \\text{的最大值}=@,\\ \\text{最小值}=@`, [String(r), String(-r)], [String(a + Math.abs(b)), String(-(a + Math.abs(b))), String(r * r), '0'],
+      return T(`寫出 $${lin(a, b)}$ 的最大值與最小值`, '\\text{最大}=@,\\quad \\text{最小}=@', [String(r), String(-r)], [String(a + Math.abs(b)), String(-(a + Math.abs(b))), String(r * r), '0'],
         '疊合成 $r\\sin(x+\\theta)$，$-r\\le r\\sin(x+\\theta)\\le r$', `$r=\\sqrt{${a * a}+${b * b}}=${r}$，最大 $${r}$、最小 $${-r}$`);
     })
   ]);
@@ -193,10 +193,10 @@
     })
   ]);
   add(7, 'tiles', [
-    T('指數函數與對數函數', 'y=a^{x}\\ \\text{與}\\ y=\\log_a x\\ \\text{的圖形對稱於直線}\\ @', ['y=x'], ['y=-x', 'x=0', 'y=0'], '兩者互為反函數', '對稱於直線 $y=x$'),
+    T('$y=a^{x}$ 與 $y=\\log_a x$ 的圖形對稱於哪一條直線？', '\\text{直線}\\ @', ['y=x'], ['y=-x', 'x=0', 'y=0'], '兩者互為反函數', '對稱於直線 $y=x$'),
     G(() => {
       const b = pick([2, 3, 5, 10]);
-      return T('寫出反函數', `y=${b}^{x}\\ \\text{的反函數是}\\ y=@`, [`\\log_{${b}}x`], [`\\log_{x}${b}`, `${b}^{-x}`, `x^{${b}}`, `\\dfrac{x}{${b}}`],
+      return T(`寫出 $y=${b}^{x}$ 的反函數`, 'y=@', [`\\log_{${b}}x`], [`\\log_{x}${b}`, `${b}^{-x}`, `x^{${b}}`, `\\dfrac{x}{${b}}`],
         '$y=a^{x}\\iff x=\\log_a y$，再把 $x$、$y$ 交換', `$y=\\log_{${b}}x$`);
     })
   ]);

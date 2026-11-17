@@ -26,8 +26,9 @@
       this.ro = new ResizeObserver(() => { try { this.layout(); } catch (e) { console.error(e); } });
       this.ro.observe(scr.main);
     }
-    get playing() { return this.zone.state === 'playing'; }
-    submit(ok) { return this.zone.answer(ok); }
+    // 只有「目前這一關」在作答中才算；已經換關的舊關卡，延遲執行的動作不會影響新關卡
+    get playing() { return this.zone.state === 'playing' && this.zone.level === this; }
+    submit(ok) { return this.zone.level === this ? this.zone.answer(ok) : 'ignored'; }
     hintHTML() { return U.rich(this.q.hint); }
     answerHTML() { return U.rich(this.q.explain); }
     setQuestion(html) {
@@ -443,7 +444,14 @@
     }
 
     hintIdle() {
-      const h = this.scr.hint;
+      const h = this.scr.hint, how = this.level && this.level.how;
+      // 拖曳、劃切等操作方式不直覺的玩法：作答前在提示列先寫「怎麼玩」
+      if (how) {
+        h.className = 'lv-hint h-wait how';
+        h.innerHTML = `<span class="hi">☝</span><div class="hb">${how}</div>`;
+        requestAnimationFrame(() => U.fit(h, 0.55));
+        return;
+      }
       h.className = 'lv-hint h-wait';
       h.innerHTML = `<span class="hi">?</span><div class="hb">卡住了？按求救卡看提示（−${this.cfg.penalty} 秒）</div>`;
     }

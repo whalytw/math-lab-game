@@ -49,6 +49,7 @@
       });
       this.bombState = 'live';
       this.trail = [];
+      this.how = '手指劃過電線就能剪斷，剪正確的那條';
       this.setGoLabel('<span class="sc">✂</span> 用手指劃過電線來剪斷');
       LG.input.onDrag(this.wiresEl, {
         down: (e, p) => {

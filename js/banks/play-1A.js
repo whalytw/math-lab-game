@@ -8,6 +8,7 @@
   const K = LG.genKit;
   const { ri, nz, pick, sample, chance, fail, gcd, fr, par, poly, term, xm, sqrtTex, O, P, P1, T, perm } = K;
   const sg = n => (n < 0 ? String(n) : '+' + n);                         // 帶正負號的拼圖塊：+3、-2
+  const fac = (a, v) => (a ? `(${xm(a, v)})` : (v || 'x'));   // (x-a)；a = 0 時只寫 x（不加括號）
   const PA = (prompt, win, shapes, after, ans, hint, explain) => Object.assign(P(prompt, win, shapes, ans, hint, explain), { after });
   /* 排序題：任兩個值至少差 d（太接近的話學生無法判斷） */
   const spread = (items, d) => {
@@ -63,7 +64,7 @@
   add(1, 'tiles', [
     G(() => {
       const a = ri(-5, 5), r = ri(1, 6), L = a - r, R = a + r;
-      return T('填入數字，完成不等式的解', `|${xm(a)}|<${r}\\iff @<x<@`, [String(L), String(R)], [String(-a - r), String(r - a), String(a), String(-r), String(r)],
+      return T(`填入數字，寫出不等式 $|${xm(a)}|<${r}$ 的解`, '@<x<@', [String(L), String(R)], [String(-a - r), String(r - a), String(a), String(-r), String(r)],
         '$|x-a|<r$：和 $a$ 的距離小於 $r$', `$${a}-${r}<x<${a}+${r}$，即 $${L}<x<${R}$`);
     }),
     G(() => {
@@ -166,12 +167,12 @@
     G(() => {
       const p = nz(-6, 6), q = nz(-6, 6); if (p === q || p === -q) fail();
       return T('因式分解', `${poly([1, -(p + q), p * q])}=(@)(@)`, [xm(p), xm(q)], [xm(-p), xm(-q), xm(p * q), xm(p + q)],
-        `找兩數，相乘為 $${p * q}$、相加為 $${-(p + q)}$`, `$(${xm(p)})(${xm(q)})$`, perm([xm(p), xm(q)], [[0, 1]]));
+        `找兩數，相乘為 $${p * q}$、相加為 $${-(p + q)}$`, `$${fac(p)}${fac(q)}$`, perm([xm(p), xm(q)], [[0, 1]]));
     }),
     G(() => {
       const c = [ri(1, 2), ri(-4, 4), ri(-5, 5), ri(-6, 6)], a = nz(-3, 3), f = x => K.polyAt(c, x);
       const R = f(a);
-      return T('利用餘式定理求餘式', `f(x)=${poly(c)}\\ \\text{除以}\\ ${xm(a)}\\ \\text{的餘式}=@`, [String(R)], [String(f(-a)), String(f(0)), String(R + 2), String(-R), String(a)],
+      return T(`利用餘式定理：求 $f(x)=${poly(c)}$ 除以 $${xm(a)}$ 的餘式 $R$`, 'R=@', [String(R)], [String(f(-a)), String(f(0)), String(R + 2), String(-R), String(a)],
         `$f(x)$ 除以 $x-a$ 的餘式是 $f(a)$`, `$f(${a})=${R}$`);
     }),
     G(() => {
@@ -183,7 +184,7 @@
   ]);
 
   /* ================= 單元 6 簡單多項式函數及其圖形 ================= */
-  const vtx = (a, h, k) => `${a === 1 ? '' : a === -1 ? '-' : a}${h ? `(${xm(h)})^{2}` : 'x^{2}'}${k ? (k > 0 ? '+' + k : k) : ''}`;
+  const vtx = (a, h, k) => `${a === 1 ? '' : a === -1 ? '-' : a}${h ? `${fac(h)}^{2}` : 'x^{2}'}${k ? (k > 0 ? '+' + k : k) : ''}`;
   add(6, 'point', [
     G(() => {
       const a = pick([1, -1, 2, -2]), h = ri(-4, 4), k = ri(-5, 5), c = [a, -2 * a * h, a * h * h + k];
@@ -215,7 +216,7 @@
     }),
     G(() => {
       const a = pick([1, -1, 2, -2, 3]), h = nz(-5, 5), k = nz(-5, 5);
-      return T('寫出頂點坐標', `y=${vtx(a, h, k)}\\ \\text{的頂點}\\ (@,@)`, [String(h), String(k)], [String(-h), String(-k), String(a), String(h + k)],
+      return T(`寫出 $y=${vtx(a, h, k)}$ 的頂點坐標`, '(h,k)=(@,@)', [String(h), String(k)], [String(-h), String(-k), String(a), String(h + k)],
         '$y=a(x-h)^{2}+k$ 的頂點是 $(h,k)$，注意 $x-h$ 的正負號', `頂點 $(${h},${k})$`);
     })
   ]);
@@ -225,14 +226,14 @@
     G(() => {
       const p = ri(-3, 3), q = ri(-4, 4), s = pick([1, -1]); if (Math.abs(p - q) < 2) fail();
       const f = x => s * 0.5 * (x - p) * (x - p) * (x - q), touch = chance(0.5);
-      return P(`圖形是 $y=${s < 0 ? '-' : ''}\\frac12(${xm(p)})^{2}(${xm(q)})$。點出圖形和 $x$ 軸${touch ? '相切' : '相交（穿過）'}的點`, box([[p, 0], [q, 0]]),
+      return P(`圖形是 $y=${s < 0 ? '-' : ''}\\frac12${fac(p)}^{2}${fac(q)}$。點出圖形和 $x$ 軸${touch ? '相切' : '相交（穿過）'}的點`, box([[p, 0], [q, 0]]),
         [{ fn: f }], touch ? [p, 0] : [q, 0], '平方的因式（重根）在那裡和 $x$ 軸相切；一次的因式在那裡穿過 $x$ 軸',
-        touch ? `$(${xm(p)})^{2}$ 是二重因式，圖形在 $(${p},0)$ 和 $x$ 軸相切` : `$(${xm(q)})$ 是一次因式，圖形在 $(${q},0)$ 穿過 $x$ 軸`);
+        touch ? `$${fac(p)}^{2}$ 是二重因式，圖形在 $(${p},0)$ 和 $x$ 軸相切` : `$${fac(q)}$ 是一次因式，圖形在 $(${q},0)$ 穿過 $x$ 軸`);
     }),
     G(() => {
       const a = ri(-6, 2), b = a + ri(2, 7), big = chance(0.5), le = chance(0.5);
       const ans = le ? (big ? b : a) : (big ? b - 1 : a + 1);
-      return P1(`不等式 $(${xm(a)})(${xm(b)})${le ? '\\le ' : '<'}0$ 的${big ? '最大' : '最小'}整數解是多少？點在數線上`, -10, 10, [], ans,
+      return P1(`不等式 $${fac(a)}${fac(b)}${le ? '\\le ' : '<'}0$ 的${big ? '最大' : '最小'}整數解是多少？點在數線上`, -10, 10, [], ans,
         '小於 0：解在兩根之間', `解是 $${a}${le ? '\\le ' : '<'}x${le ? '\\le ' : '<'}${b}$，${big ? '最大' : '最小'}整數解 $${ans}$`);
     })
   ]);
@@ -241,8 +242,8 @@
       const a = ri(-6, 4), b = a + ri(1, 6), lt = chance(0.5);
       const ex = [String(-a), String(-b), String(a - 1), String(b + 1), String(a * b)];
       return lt
-        ? T('填入數字，寫出不等式的解', `(${xm(a)})(${xm(b)})<0\\iff @<x<@`, [String(a), String(b)], ex, '小於 0：解在兩根之間', `$${a}<x<${b}$`)
-        : T('填入數字，寫出不等式的解', `(${xm(a)})(${xm(b)})\\ge0\\iff x\\le@\\ \\text{或}\\ x\\ge@`, [String(a), String(b)], ex, '大於等於 0：解在兩根的外側（含兩根）', `$x\\le${a}$ 或 $x\\ge${b}$`);
+        ? T(`填入數字，寫出不等式 $${fac(a)}${fac(b)}<0$ 的解`, '@<x<@', [String(a), String(b)], ex, '小於 0：解在兩根之間', `$${a}<x<${b}$`)
+        : T(`填入數字，寫出不等式 $${fac(a)}${fac(b)}\\ge0$ 的解`, 'x\\le@\\ \\text{或}\\ x\\ge@', [String(a), String(b)], ex, '大於等於 0：解在兩根的外側（含兩根）', `$x\\le${a}$ 或 $x\\ge${b}$`);
     })
   ]);
 
@@ -321,12 +322,12 @@
       const h = ri(-4, 4), k = ri(-4, 4), r = ri(1, 4), F = h * h + k * k - r * r;
       if (!h && !k) fail();
       return PA(`點出圓 $${circTex(h, k, F)}$ 的圓心`, box([[h + r, k + r], [h - r, k - r]], 1), [], [{ circle: [h, k, r] }], [h, k],
-        '配方成 $(x-h)^{2}+(y-k)^{2}=r^{2}$，圓心 $(h,k)$', `$(${xm(h)})^{2}+(${K.xm(k, 'y')})^{2}=${r * r}$，圓心 $(${h},${k})$`);
+        '配方成 $(x-h)^{2}+(y-k)^{2}=r^{2}$，圓心 $(h,k)$', `$${fac(h)}^{2}+${fac(k, 'y')}^{2}=${r * r}$，圓心 $(${h},${k})$`);
     }),
     G(() => {
       const h = ri(-4, 4), k = ri(-4, 4), r = ri(1, 4), w = ri(0, 3);
       const nm = ['最高點', '最低點', '最右邊的點', '最左邊的點'][w], ans = [[h, k + r], [h, k - r], [h + r, k], [h - r, k]][w];
-      return PA(`點出圓 $(${xm(h)})^{2}+(${K.xm(k, 'y')})^{2}=${r * r}$ 上的${nm}`, box([[h + r, k + r], [h - r, k - r]], 1), [], [{ circle: [h, k, r] }], ans,
+      return PA(`點出圓 $${fac(h)}^{2}+${fac(k, 'y')}^{2}=${r * r}$ 上的${nm}`, box([[h + r, k + r], [h - r, k - r]], 1), [], [{ circle: [h, k, r] }], ans,
         '從圓心往上下左右走一個半徑', `圓心 $(${h},${k})$、半徑 $${r}$，${nm}是 $(${ans[0]},${ans[1]})$`);
     })
   ]);
@@ -341,7 +342,7 @@
     G(() => {
       const h = nz(-5, 5), k = nz(-5, 5), r = ri(1, 6), F = h * h + k * k - r * r;
       return T('配方，寫成圓的標準式', `${circTex(h, k, F)}\\iff(x@)^{2}+(y@)^{2}=@`, [sg(-h), sg(-k), String(r * r)], [sg(h), sg(k), String(r), String(h * h + k * k)],
-        '$x^{2}-2hx=(x-h)^{2}-h^{2}$', `$(${xm(h)})^{2}+(${K.xm(k, 'y')})^{2}=${r * r}$`);
+        '$x^{2}-2hx=(x-h)^{2}-h^{2}$', `$${fac(h)}^{2}+${fac(k, 'y')}^{2}=${r * r}$`);
     })
   ]);
 })(window.LG);

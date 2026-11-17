@@ -59,7 +59,7 @@
       for (const z of game.zones) {
         try { z.update(dt); } catch (e) { console.error(e); }
       }
-      try { LG.Shared3D.render(); } catch (e) { console.error(e); }
+      if (LG.Shared3D) { try { LG.Shared3D.render(); } catch (e) { console.error(e); } }   // 骨牌魔王關已取消，3D 場景模組不再載入
       try { LG.fx3d.frame(dt); } catch (e) { console.error(e); }
     }
     requestAnimationFrame(frame);

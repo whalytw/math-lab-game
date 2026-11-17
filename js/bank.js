@@ -14,14 +14,28 @@
     match: { need: 3, label: '配對' },
     num: { need: 1, label: '數值' },
     mirror: { need: 1, label: '圖形（鏡射）' },
-    boss: { need: 1, label: '魔王' },
     tune: { need: 1, label: '參數調整' },
     graph: { need: 1, label: '圖形判讀' },
     // 新玩法（2026-11）：切切樂直接用配對題的算式（from），不需要另外出題
-    slice: { need: 6, label: '切切樂', from: 'match' },
+    slice: { need: 4, label: '切切樂', from: 'match' },
     order: { need: 1, label: '排序' },
     point: { need: 1, label: '座標尋寶' },
-    tiles: { need: 1, label: '公式拼圖' }
+    tiles: { need: 1, label: '公式拼圖' },
+    // 第 2 批新玩法（2026-11）：from = 直接用其他玩法的題庫；distinctV = 一關裡的值不能重複
+    memory: { need: 4, label: '翻牌記憶', from: 'match', distinctV: true },
+    mole: { need: 4, label: '打地鼠', from: 'match' },
+    swipe: { need: 4, label: '快問快答', from: 'tf' },
+    bingo: { need: 3, label: '數字賓果', from: 'match', distinctV: true },
+    maze: { need: 3, label: '迷宮岔路', from: 'tf' },
+    balance: { need: 3, label: '天平平衡', from: 'match' },
+    estimate: { need: 1, label: '估算飛鏢' },
+    shade: { need: 1, label: '數線塗色' },
+    bins: { need: 1, label: '分類收納' },
+    spot: { need: 1, label: '找錯偵探' },
+    chain: { need: 1, label: '計算接力' },
+    shoot: { need: 1, label: '投籃瞄準' },
+    gmatch: { need: 1, label: '圖形對對碰' },
+    build: { need: 1, label: '拖點作圖' }
   };
   LG.MECH = MECH;
 
@@ -56,11 +70,16 @@
   };
 
   /* 題庫檔用：const { add, copy } = LG.bank.forBook('3A') */
+  const KEYN = {};
   B.forBook = book => ({
     /* 登記題目：list 為陣列（不分難度）或 { easy, normal, hard } */
     add(unit, mech, list) {
-      const put = (arr, d) => arr.forEach((it, i) => {
-        B.items.push({ book, unit, mech, d, key: `${book}|${unit}|${mech}|${d || 'a'}|${i}`, data: it });
+      // 骨牌魔王關已取消（2026-11）：原本的魔王題（較難的單選題）改由拆彈小組出題
+      if (mech === 'boss') mech = 'mc';
+      // 題目代號：同一冊、單元、玩法、難度依登記順序編號（題庫檔、隨機題型檔分開 add 也不會重複）
+      const put = (arr, d) => arr.forEach(it => {
+        const ck = `${book}|${unit}|${mech}|${d || 'a'}`, n = KEYN[ck] = (KEYN[ck] || 0) + 1;
+        B.items.push({ book, unit, mech, d, key: `${ck}|${n - 1}`, data: it });
       });
       if (Array.isArray(list)) put(list, null);
       else Object.keys(list).forEach(d => put(list[d], d));
@@ -82,13 +101,24 @@
   B.isGen = d => !!(d && typeof d.gen === 'function');
   const okData = (mech, q) => {
     if (!q) return false;
+    const src = (MECH[mech] && MECH[mech].from) || mech;
+    if (src === 'match') return q.tex != null && q.v != null;
+    if (src === 'tf') return typeof q.s === 'string' && typeof q.a === 'boolean';
     if (mech === 'num' && q.answer != null) return Number.isInteger(q.answer) && q.answer >= 1 && q.answer <= 999;
-    if (mech === 'mc' || mech === 'boss') return Array.isArray(q.opts) && q.opts.length === 4 && new Set(q.opts).size === 4;
+    if (mech === 'mc') return Array.isArray(q.opts) && q.opts.length === 4 && new Set(q.opts).size === 4;
     if (mech === 'match' || mech === 'slice') return q.tex != null && q.v != null;
     if (mech === 'order') return Array.isArray(q.items) && q.items.length >= 3 && q.items.every(it => Number.isFinite(it.v)) &&
       q.items.every((a, i) => q.items.every((b, j) => i === j || Math.abs(a.v - b.v) > 1e-6 * Math.max(1, Math.abs(a.v))));
     if (mech === 'point') return Array.isArray(q.ans) && q.ans.every(Number.isInteger) && q.win &&
       q.ans[0] > q.win.xmin && q.ans[0] < q.win.xmax && q.ans[1] > q.win.ymin && q.ans[1] < q.win.ymax;
+    if (mech === 'estimate') return Number.isFinite(q.v) && q.v > q.lo && q.v < q.hi && q.tol > 0;
+    if (mech === 'shade') return Array.isArray(q.pts) && q.segs.length === q.pts.length + 1 && q.dots.length === q.pts.length && (q.segs.some(Boolean) || q.dots.some(Boolean));
+    if (mech === 'bins') return Array.isArray(q.items) && q.items.length >= 4 && q.bins.every((b, i) => q.items.some(it => it.b === i)) && new Set(q.items.map(it => it.tex)).size === q.items.length;
+    if (mech === 'spot') return Array.isArray(q.steps) && q.bad >= 0 && q.bad < q.steps.length;
+    if (mech === 'chain') return Array.isArray(q.steps) && q.steps.length === 3 && q.steps.every(st => st.opts.length === 3 && new Set(st.opts).size === 3);
+    if (mech === 'shoot') return Array.isArray(q.ans) && q.params.length > 0;
+    if (mech === 'gmatch') return Array.isArray(q.items) && q.items.length === 3 && new Set(q.items.map(it => it.tex)).size === 3;
+    if (mech === 'build') return Array.isArray(q.answer) && typeof q.check === 'function' && q.check(q.answer) && !q.check(q.handles.map(h => h.p));
     if (mech === 'tiles') return typeof q.tpl === 'string' && Array.isArray(q.ans) && q.ans.length === q.tpl.split('@').length - 1;
     return true;
   };
@@ -163,7 +193,9 @@
       const data = B.make(it.data, mech);
       if (!data) continue;
       if (mech === 'match' && chosen.some(c => String(c.data.v) === String(data.v) || c.data.tex === data.tex)) continue;
-      if (mech === 'slice' && chosen.some(c => c.data.tex === data.tex)) continue;
+      if (MECH[mech].from === 'match' && chosen.some(c => c.data.tex === data.tex)) continue;
+      if (MECH[mech].distinctV && chosen.some(c => String(c.data.v) === String(data.v))) continue;
+      if (MECH[mech].from === 'tf' && chosen.some(c => c.data.s === data.s)) continue;
       chosen.push({ key: it.key, gen: B.isGen(it.data), data });
       if (chosen.length === need) break;
     }
@@ -199,13 +231,7 @@
       if (adj(s) < adj(best)) best = s;
     }
     seq = best;
-    // 最後一關盡量排「有魔王題」的單元
-    const hasBoss = u => B.pool(book, u, 'boss', diff).length > 0;
-    if (seq.length > 1 && !hasBoss(seq[seq.length - 1])) {
-      const j = seq.map((u, k) => k).reverse().find(k => k < seq.length - 1 && hasBoss(seq[k]));
-      if (j != null) [seq[j], seq[seq.length - 1]] = [seq[seq.length - 1], seq[j]];
-    }
-    // 2. 每關的玩法：第 1 關是非暖身、最後一關魔王，其餘輪流使用較少用過的玩法
+    // 2. 每關的玩法：第 1 關是非暖身，其餘輪流使用較少用過的玩法
     const used = new Set(), mechUse = {}, rounds = [];
     // 老師在設定頁關掉的玩法；勾選的單元用剩下的玩法排不出關卡時，才用關掉的玩法補上（關數不會變少）
     const off = new Set((LG.settings && LG.settings.data.mechOff) || []);
@@ -226,11 +252,9 @@
       let order;
       // 是非題（觀念題）在中間也會輪到，但每人最多約 1/4 的關數
       const tfOk = (mechUse.tf || 0) < Math.ceil(count / 4);
-      const rest = U.shuffle(avail.filter(m => m !== 'boss' && (m !== 'tf' || (tfOk && i > 0))));
+      const rest = U.shuffle(avail.filter(m => m !== 'tf' || (tfOk && i > 0)));
       rest.sort((a, b) => (mechUse[a] || 0) - (mechUse[b] || 0) || (a === prev) - (b === prev));
-      if (i === 0) order = ['tf'].concat(rest, ['boss']);
-      else if (i === seq.length - 1 && count > 1) order = ['boss'].concat(rest, ['tf']);
-      else order = rest.concat(['boss', 'tf']);
+      order = i === 0 ? ['tf'].concat(rest) : rest.concat(['tf']);
       order = order.filter(m => avail.includes(m));
       let r = null;
       for (const mech of order) {

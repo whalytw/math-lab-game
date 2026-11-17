@@ -90,6 +90,7 @@
 
       this.updateKnob(false);
       this.updateRead();
+      this.how = '左右拖動滑桿，讓曲線通過目標點';
       this.setGo('培養！', () => this.go());
       this.setGoEnabled(false);
 

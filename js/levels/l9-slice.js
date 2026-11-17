@@ -1,13 +1,14 @@
 /* 切切樂（用配對題的算式）
-   六個泡泡在畫面上輕輕飄動，每個泡泡寫著「算式＝值」，其中 3 個正確、3 個錯誤。
-   用手指劃過泡泡把它切開：把 3 個「正確」的泡泡全部切開就過關；切到錯誤的泡泡算答錯一次。
-   題庫：直接用各單元的配對題（{ tex, v, h, p }），錯誤的泡泡把值換成同單元其他算式的值。 */
+   4 個泡泡在畫面上輕輕飄動，每個泡泡寫著「算式＝值」。每關隨機是以下兩種之一：
+   「切對的」：只有 1 個正確，把它切開；「切錯的」：只有 1 個錯誤，把它切開。
+   用手指劃過泡泡就能切開；切到其他泡泡算答錯一次（和拆彈小組一樣）。
+   題庫：直接用各單元的配對題（{ tex, v, h, p }），錯誤的泡泡把值換成同單元其他算式的值。
+   這裡的「配對題工具」（LG.matchKit）也給翻牌記憶、打地鼠、數字賓果、天平平衡共用。 */
 'use strict';
 (function (LG) {
   const U = LG.util;
-  const RIGHT = 3;
 
-  /* 「它的斜率」→ 泡泡第二行寫「斜率 −2」；「它的值」「它的極限」等直接寫「＝ 值」 */
+  /* 「它的斜率」→ 第二行寫「斜率 −2」；「它的值」「它的極限」等直接寫「＝ 值」 */
   const EQ = ['', '值', '極限', '極限值', '和', '弳度'];
   const labelOf = p => {
     const s = String(p || '').replace(/（.*）$/, '');
@@ -16,7 +17,7 @@
     return EQ.includes(l) ? '' : l;
   };
   const ctxOf = p => { const m = String(p || '').match(/（(.*)）$/); return m ? m[1] : ''; };
-  /* 簡單的數值（整數、分數）轉成數字，用來判斷兩個值是否其實相等 */
+  /* 簡單的數值（整數、分數、小數）轉成數字，用來判斷兩個值是否其實相等 */
   const num = v => {
     const s = String(v).trim();
     if (/^-?\d+(\.\d+)?$/.test(s)) return +s;
@@ -29,29 +30,41 @@
     return x != null && y != null && Math.abs(x - y) < 1e-9;
   };
   const vt = v => U.fracTex(v).replace(/\\d?frac/g, '\\dfrac');   // 值用大分數，學生站遠也看得清楚
+  const T = s => String(s).replace(/\\dfrac/g, '\\frac');
+  /* 給某個算式找一個「錯誤的值」：同單元、同一種問法的其他值（不能剛好等於正確值） */
+  const wrongValue = (it, items, pool) => {
+    const lab = labelOf(it.p);
+    const c = U.shuffle([...new Set(items.concat(pool || []).filter(o => labelOf(o.p) === lab).map(o => String(o.v)))]).filter(v => !same(v, it.v));
+    return c.length ? c[0] : null;
+  };
+  /* 泡泡、卡片上的兩行字：算式＋「＝ 值」或「斜率 值」 */
+  const cardHTML = (tex, v, lab) => `<div class="sl-ex">${U.tex(T(tex))}</div><div class="sl-v">${lab ? `<span class="sl-lab">${lab}</span> ${U.tex(vt(v))}` : U.tex('=' + vt(v))}</div>`;
+  /* 一個算式的「正確敘述」TeX（解說用） */
+  const factTex = it => { const lab = labelOf(it.p); return lab ? `$${T(it.tex)}$ 的${lab}是 $${vt(it.v)}$` : `$${T(it.tex)}=${vt(it.v)}$`; };
+  LG.matchKit = { labelOf, ctxOf, num, same, vt, T, wrongValue, cardHTML, factTex };
 
-  /* 題庫中樞給 6 個算式；前 3 個當正確的泡泡，後 3 個把值換成別的值（錯誤） */
+  /* 題庫中樞給 4 個算式；第 1 個是要切的那一個 */
   function compose(chosen, ctx) {
+    const pickRight = Math.random() < 0.5;          // true：切唯一正確的；false：切唯一錯誤的
     const items = U.shuffle(chosen.slice());
     const out = [];
     for (let i = 0; i < items.length; i++) {
-      const it = items[i], lab = labelOf(it.p);
-      if (i < RIGHT) { out.push({ tex: it.tex, v: it.v, show: it.v, ok: true, lab, h: it.h }); continue; }
-      // 錯誤的值：同單元、同一種問法的其他值（不能剛好等於正確值）
-      const cands = U.shuffle([...new Set(items.concat(ctx.pool).filter(o => labelOf(o.p) === lab).map(o => String(o.v)))])
-        .filter(v => !same(v, it.v));
-      if (!cands.length) return null;
-      out.push({ tex: it.tex, v: it.v, show: cands[0], ok: false, lab, h: it.h });
+      const it = items[i], lab = labelOf(it.p), truth = pickRight ? i === 0 : i !== 0;
+      if (truth) { out.push({ tex: it.tex, v: it.v, p: it.p, show: it.v, ok: true, hit: i === 0, lab, h: it.h }); continue; }
+      const w = wrongValue(it, items, ctx.pool);
+      if (w == null) return null;
+      out.push({ tex: it.tex, v: it.v, p: it.p, show: w, ok: false, hit: i === 0, lab, h: it.h });
     }
     const p0 = items.map(it => ctxOf(it.p)).find(Boolean) || '';
     const hints = [...new Set(out.map(o => o.h).filter(Boolean))].slice(0, 2);
-    const T = s => s.replace(/\\dfrac/g, '\\frac');
+    const tgt = out[0];
     return {
       key: out.map(o => o.tex).join('|'),
       items: U.shuffle(out),
-      prompt: `把「正確」的泡泡切開！（共 ${RIGHT} 個；切到錯的算答錯）` + (p0 ? `　${p0}` : ''),
+      mode: pickRight ? 'right' : 'wrong',
+      prompt: (pickRight ? '4 個泡泡中只有 1 個「正確」，把它切開！' : '4 個泡泡中只有 1 個「錯誤」，把它切開！') + (p0 ? `　${p0}` : ''),
       hint: hints.length ? hints.join('\n') : '逐一算算看，算式的值和泡泡上寫的一樣才是正確的',
-      explain: '錯誤的泡泡：' + out.filter(o => !o.ok).map(o => `$${T(o.tex)}$ 的${o.lab || '值'}應為 $${vt(o.v)}$`).join('；')
+      explain: pickRight ? `正確的是：${factTex(tgt)}` : `錯誤的是 $${T(tgt.tex)}$：它的${tgt.lab || '值'}應為 $${vt(tgt.v)}$`
     };
   }
 
@@ -74,7 +87,8 @@
     constructor(zone, q, scr) {
       super(zone, q, scr);
       this.celebrateTime = 2.3;
-      this.setQuestion(U.rich(q.prompt) + `<span class="l3-prog">已切開 <b>0</b>／${RIGHT}</span>`);
+      this.setQuestion(U.rich(q.prompt));
+      this.how = '手指快速劃過泡泡，就能把它切開';
       const m = scr.main;
       m.classList.add('l9');
       m.innerHTML = '<div class="sl-field"><canvas class="w-blade sl-blade"></canvas></div>';
@@ -82,8 +96,7 @@
       this.blade = m.querySelector('.sl-blade');
       this.bctx = this.blade.getContext('2d');
       this.pills = q.items.map((it, i) => {
-        const val = it.lab ? `<span class="sl-lab">${it.lab}</span> ${U.tex(vt(it.show))}` : U.tex('=' + vt(it.show));
-        const el = U.el('div', 'sl-pill', `<div class="sl-in"><div class="sl-ex">${U.tex(it.tex.replace(/\\dfrac/g, '\\frac'))}</div><div class="sl-v">${val}</div></div>`);
+        const el = U.el('div', 'sl-pill', `<div class="sl-in">${cardHTML(it.tex, it.show, it.lab)}</div>`);
         this.field.appendChild(el);
         return { i, it, el, ph: U.rand(0, 6.28), sp: U.rand(0.7, 1.1), cut: false, x: 0, y: 0, w: 0, h: 0, acc: 0, rot: 0 };
       });
@@ -113,11 +126,11 @@
       this.bs = s;
       this.blade.width = Math.round(r.width * s);
       this.blade.height = Math.round(r.height * s);
-      const w = r.width * 0.46, h = Math.min(r.height * 0.27, w * 0.62);
+      const w = r.width * 0.47, h = Math.min(r.height * 0.38, w * 0.62);
       this.pills.forEach((pl, k) => {
         pl.w = w; pl.h = h;
-        pl.bx = r.width * (k % 2 ? 0.74 : 0.26);
-        pl.by = r.height * (0.18 + Math.floor(k / 2) * 0.32);
+        pl.bx = r.width * (k % 2 ? 0.745 : 0.255);
+        pl.by = r.height * (k < 2 ? 0.25 : 0.73);
         pl.el.style.width = w + 'px'; pl.el.style.height = h + 'px';
         // 先依寬度縮字；算式太高（例如 Σ、分數）時再依泡泡高度縮小
         const inn = pl.el.querySelector('.sl-in');
@@ -173,7 +186,7 @@
       pl.cut = true;
       LG.audio.play('cut');
       const o = this.zoff(this.field);
-      const good = pl.it.ok;
+      const good = pl.it.hit;
       this.zone.fx.burst(o.x + pl.x, o.y + pl.y, { n: 20, colors: good ? [LG.TC('ok'), '#ffffff', LG.TC('warn')] : [LG.TC('bad'), '#ffd0d5'], speed: [120, 360], gravity: 600 });
       // 一分為二、往兩邊掉落
       pl.el.style.visibility = 'hidden';
@@ -188,14 +201,7 @@
         });
         setTimeout(() => h.remove(), 900);
       });
-      if (good) {
-        this.cutN++;
-        const b = this.scr.q.querySelector('.l3-prog b');
-        if (b) b.textContent = this.cutN;
-        LG.audio.play('select');
-        if (this.cutN >= RIGHT) this.submit(true);
-        return;
-      }
+      if (good) { this.submit(true); return; }
       // 切錯：留下一個 ✗ 記號
       const mk = U.el('div', 'sl-mark bad', '✗');
       mk.style.left = pl.x + 'px'; mk.style.top = pl.y + 'px';
@@ -204,8 +210,8 @@
     }
 
     celebrate() {
-      // 剩下的都是錯誤的泡泡：打上 ✗ 淡出
-      this.pills.forEach(pl => { if (!pl.cut) pl.el.classList.add('wrong-left'); });
+      // 其他泡泡淡出
+      this.pills.forEach(pl => { if (!pl.cut) pl.el.classList.add('dim'); });
       const p = this.zone.fx.rel(this.field);
       this.zone.fx.confetti(p.x, p.y, { n: 36 });
     }
@@ -213,7 +219,7 @@
     reveal() {
       this.pills.forEach(pl => {
         if (pl.cut) return;
-        pl.el.classList.add(pl.it.ok ? 'answer' : 'wrong-left');
+        pl.el.classList.add(pl.it.hit ? 'answer' : 'dim');
       });
     }
 

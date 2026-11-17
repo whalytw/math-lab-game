@@ -37,6 +37,7 @@
       this.state = 'live';
       this.touched = false;
       this.paintVals();
+      this.how = '按 ◀ ▶ 調整，讓實線和虛線重合';
       this.setGo('校準！', () => this.go());
       this.setGoEnabled(false);
     }

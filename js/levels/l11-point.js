@@ -27,6 +27,7 @@
         move: (e, p) => this.put(p),
         up: () => {}
       });
+      this.how = '在圖上點一下放標記，再按「標記！」';
       this.setGo('標記！', () => this.go());
       this.setGoEnabled(false);
     }

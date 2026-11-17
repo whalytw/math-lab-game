@@ -85,6 +85,14 @@ window.LG = window.LG || {};
     }
   };
 
+  /* 依高度縮小：內容比 maxH 高時逐步縮小字級（最多縮到 45%）。只看真正的高度，KaTeX 的小溢出不會觸發 */
+  U.fitH = (el, maxH) => {
+    if (!el || !(maxH > 0)) return;
+    const pf = parseFloat(getComputedStyle(el.parentElement || el).fontSize) || 16;   // 從目前的字級往下縮（不重設，保留先前依寬度縮過的結果）
+    let fs = parseFloat(getComputedStyle(el).fontSize) || pf, g = 0;
+    while (el.scrollHeight > maxH + 2 && fs > pf * 0.45 && g++ < 24) { fs *= 0.93; el.style.fontSize = fs.toFixed(2) + 'px'; }
+  };
+
   /* 題目抽選：避開最近幾次（跨三區）出現過的題目 */
   const recent = {};
   U.pickFresh = (bucket, list, keyFn, memory) => {
@@ -111,7 +119,7 @@ window.LG = window.LG || {};
   };
 
   /* 版本號：設定頁會顯示，用來確認電腦上跑的是不是最新檔案 */
-  LG.VERSION = '2026-11-17b';
+  LG.VERSION = '2026-11-17c';
 
   U.UNIT_HEX = {
     1: '#6fc3ff', 2: '#a58bff', 3: '#ff7eb8', 4: '#c9e45c', 5: '#ffb547',

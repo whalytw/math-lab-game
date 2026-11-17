@@ -157,12 +157,13 @@
           }
         }, { threshold: true });
       });
+      this.how = '按 ▲ ▼ 轉動每一位數字，再按「觀測！」';
       this.setGo('觀測！', () => this.go());
       this.setGoEnabled(false);
     }
 
     layout() {
-      U.fit(this.lens.querySelector('.lens-num'), 0.5, true);
+      U.fit(this.lens.querySelector('.lens-num'), 0.3, true);
       U.fit(this.lens.querySelector('.lens-sci'), 0.5, true);
     }
 

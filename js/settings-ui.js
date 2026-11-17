@@ -167,7 +167,7 @@
       .sort((a, b) => a.L.meta.id - b.L.meta.id);
     const grid = row.querySelector('.m-grid');
     mechBtns = list.map(({ m, L }) => {
-      const b = U.el('div', 'seg-b m-tg', L.meta.name + (L.meta.id >= 9 ? '<sup>新</sup>' : ''));
+      const b = U.el('div', 'seg-b m-tg', L.meta.name);
       b.dataset.m = m;
       I.onTap(b, () => {
         const off = S.data.mechOff.slice(), k = off.indexOf(m);

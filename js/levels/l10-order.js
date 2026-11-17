@@ -28,6 +28,7 @@
       this.order = this.cards.slice();   // 目前由上到下的順序
       this.drag = null;
       this.cards.forEach(c => this.bindDrag(c));
+      this.how = '按住卡片上下拖曳，排好按「送出順序」';
       this.setGo('送出順序', () => this.go());
     }
 

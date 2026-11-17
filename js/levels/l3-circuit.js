@@ -61,6 +61,7 @@
       this.links = [];
       this.drag = null;
       this.count = 0;
+      this.how = '從左邊圓點拖一條線，接到右邊的值';
       this.setGoLabel('拖曳連線來作答');
       LG.input.onDrag(this.board, {
         down: (e, p) => this.onDown(p),

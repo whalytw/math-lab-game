@@ -80,6 +80,7 @@
   K.ap = v => (Math.abs(v - Math.round(v)) < 1e-9 ? '=' + Math.round(v) : (+v.toFixed(Math.abs(v) < 0.1 ? 3 : 2)).toString());
   /* 排序：items = [[TeX, 數值], …]；desc = true 時由大到小。解說自動寫出正確順序 */
   K.O = (prompt, items, hint, extra, desc) => {
+    if (items.length > 3) items = K.sample(items, 3);   // 每題 3 張卡（題型樣板可以多給幾個，隨機取 3 個）
     const it = items.map(([tex, v, ap]) => ({ tex, v, ap: ap == null ? K.ap(v) : ap }));
     const s = it.slice().sort((a, b) => (desc ? b.v - a.v : a.v - b.v)).map(a => a.tex.replace(/\\dfrac/g, '\\frac'));
     return { prompt, items: it, desc: !!desc, hint, explain: `$${s.join(desc ? '>' : '<')}$` + (extra ? '；' + extra : '') };
@@ -107,6 +108,42 @@
     const seen = new Set([key(ans)]);
     return out.filter(a => { const k = key(a); if (seen.has(k)) return false; seen.add(k); return true; });
   };
+  /* ---------- 第 2 批新玩法的題目格式 ---------- */
+  /* 估算飛鏢：在數線 [lo, hi] 上估出 tex 的位置，誤差 ±tol 內算對 */
+  K.E = (prompt, tex, v, lo, hi, tol, hint, explain) => ({ prompt, tex, v, lo, hi, tol, hint, explain: explain || `$${tex}\\approx${K.ap(v).replace('=', '')}$` });
+  /* 數線塗色：pts 為由小到大的分界點（ptsTex 為標示文字，可省略）；segs[i] = 第 i 段（含兩端射線）是否塗色；dots[i] = 分界點是否包含 */
+  K.S = (prompt, pts, segs, dots, hint, explain, ptsTex) => ({ prompt, pts, ptsTex: ptsTex || pts.map(String), segs, dots, hint, explain });
+  /* 由不等式的「哪些區間成立」產生 segs、dots：sign(x) 回傳在 x 處是否成立 */
+  K.Sfrom = (prompt, pts, test, hint, explain, ptsTex) => {
+    const segs = [], dots = pts.map(p => !!test(p));
+    for (let i = 0; i <= pts.length; i++) {
+      const a = i === 0 ? pts[0] - 1 : pts[i - 1], b = i === pts.length ? pts[pts.length - 1] + 1 : pts[i];
+      segs.push(!!test((a + b) / 2));
+    }
+    return K.S(prompt, pts, segs, dots, hint, explain, ptsTex);
+  };
+  /* 分類收納：bins = 籃子名稱；items = [[TeX, 籃子編號], …] */
+  K.B = (prompt, bins, items, hint, explain) => ({ prompt, bins, items: items.map(([tex, b]) => ({ tex, b })), hint, explain });
+  /* 找錯偵探：steps = 解題步驟（可含中文，數學式用 $…$）；bad = 錯的那一步；fix = 正確的寫法 */
+  K.F = (prompt, steps, bad, fix, hint) => ({ prompt, steps, bad, fix, hint, explain: `第 ${bad + 1} 步錯了，應該是：${fix}` });
+  /* 把一串正確的步驟其中一步換成錯誤版本（wrongs[i] 為第 i 步的錯誤寫法，沒有就 null） */
+  K.Fpick = (prompt, steps, wrongs, hint) => {
+    const cand = wrongs.map((w, i) => (w ? i : -1)).filter(i => i >= 0);
+    const bad = K.pick(cand), s = steps.slice();
+    s[bad] = wrongs[bad];
+    return K.F(prompt, s, bad, steps[bad], hint);
+  };
+  /* 計算接力：steps = [[題目, 正解, 錯1, 錯2], …]（3 道鎖） */
+  K.CH = (prompt, steps, hint, explain) => ({ prompt, steps: steps.map(([q, ...o]) => ({ q, opts: o.map(String) })), hint, explain });
+  /* 投籃瞄準：start = 起點、hoop = 籃框；params 與參數調校相同；path(P) 回傳球的軌跡函數 y = f(x)，球從 start 的 x 飛到 hoop 的 x 之後 */
+  K.SH = (prompt, win, start, hoop, params, ans, path, hint, explain) =>
+    ({ prompt, win: Array.isArray(win) ? { xmin: win[0], xmax: win[1], ymin: win[2], ymax: win[3] } : win, start, hoop, params, ans, path, hint, explain });
+  /* 圖形對對碰：items = [[方程式 TeX, 圖形陣列], …]（3 個） */
+  K.GM = (prompt, win, items, hint, explain) =>
+    ({ prompt, win: Array.isArray(win) ? { xmin: win[0], xmax: win[1], ymin: win[2], ymax: win[3] } : win, items: items.map(([tex, shapes]) => ({ tex, shapes })), hint, explain });
+  /* 拖點作圖：handles = [[x, y, 標籤], …] 起始位置；draw(P) 依目前各點畫圖；check(P) 判斷是否正確；answer = 一組正解 */
+  K.BD = (prompt, win, handles, draw, check, answer, hint, explain) =>
+    ({ prompt, win: Array.isArray(win) ? { xmin: win[0], xmax: win[1], ymin: win[2], ymax: win[3] } : win, handles: handles.map(([x, y, label]) => ({ p: [x, y], label: label || '' })), draw, check, answer, hint, explain });
   K.$ = s => `$${s}$`;
   K.GIVEN = '已知 $\\log 2\\approx0.3010$，$\\log 3\\approx0.4771$';
 

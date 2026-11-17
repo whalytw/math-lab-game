@@ -7,6 +7,7 @@
   const K = LG.genKit;
   const { ri, nz, pick, sample, chance, fail, fr, par, poly, term, xm, O, P, T, perm } = K;
   const sg = n => (n < 0 ? String(n) : '+' + n);
+  const fac = (a, v) => (a ? `(${xm(a, v)})` : (v || 'x'));   // (x-a)；a = 0 時只寫 x（不加括號）
   const PA = (prompt, win, shapes, after, ans, hint, explain) => Object.assign(P(prompt, win, shapes, ans, hint, explain), { after });
   const spread = (items, d) => {
     const v = items.map(i => i[1]).sort((a, b) => a - b);
@@ -78,7 +79,7 @@
     }),
     G(() => {
       const a = ri(-3, 3), b = ri(-3, 3), h = nz(-3, 3), k = nz(-3, 3);
-      return P(`$y=f(x)$ 的圖形通過點 $(${a},${b})$。點出 $y=f(${xm(h)})${sg(k)}$ 的圖形一定通過的點`, box([[a, b], [a + h, b + k]], 1.5), [{ pt: [a, b] }], [a + h, b + k],
+      return P(`$y=f(x)$ 的圖形通過點 $(${a},${b})$。點出 $y=f${fac(h)}${sg(k)}$ 的圖形一定通過的點`, box([[a, b], [a + h, b + k]], 1.5), [{ pt: [a, b] }], [a + h, b + k],
         '$f(x-h)+k$：圖形向右平移 $h$、向上平移 $k$', `$(${a}${sg(h)},${b}${sg(k)})=(${a + h},${b + k})$`);
     })
   ]);
@@ -173,7 +174,7 @@
       const ans = (mx === (k > 0)) ? [p, f(p)] : [q, f(q)];
       return PA(`點出 $y=${poly(c)}$ 圖形上的極${mx ? '大' : '小'}點`, box([[p, f(p)], [q, f(q)]], 1.5), [], [{ fn: f }], ans,
         "解 $f'(x)=0$，再看 $f'$ 的正負變化：由正變負是極大、由負變正是極小",
-        `$f'(x)=${poly(deriv(c))}=${k < 0 ? '-' : ''}3(${xm(p)})(${xm(q)})$，極${mx ? '大' : '小'}點 $(${ans[0]},${ans[1]})$`);
+        `$f'(x)=${poly(deriv(c))}=${k < 0 ? '-' : ''}3${fac(p)}${fac(q)}$，極${mx ? '大' : '小'}點 $(${ans[0]},${ans[1]})$`);
     }),
     G(() => {
       const h = ri(-3, 3), kk = ri(-3, 3), a = pick([1, -1]), m = pick([-3, 0, 3]);
@@ -190,9 +191,9 @@
     })
   ]);
   add(6, 'tiles', [
-    T("用導函數判斷遞增、遞減", "f'(x)>0\\Rightarrow f(x)\\ \\text{遞}@,\\quad f'(x)<0\\Rightarrow f(x)\\ \\text{遞}@", ['\\text{增}', '\\text{減}'], ['\\text{等}'],
+    T("用導函數判斷遞增、遞減", "f'(x)>0\\Rightarrow\\text{遞}@,\\quad f'(x)<0\\Rightarrow\\text{遞}@", ['\\text{增}', '\\text{減}'], ['\\text{等}'],
       '切線斜率為正，圖形往上', "$f'>0$ 遞增、$f'<0$ 遞減"),
-    T("二階導數判別法", "f'(a)=0,\\ f''(a)<0\\Rightarrow f(a)\\ \\text{為極}@\\text{值；}\\ f''(a)>0\\Rightarrow\\text{極}@\\text{值}", ['\\text{大}', '\\text{小}'], ['\\text{零}'],
+    T("二階導數判別法：已知 $f'(a)=0$，$f(a)$ 是極大值還是極小值？", "f''(a)<0\\Rightarrow\\text{極}@,\\quad f''(a)>0\\Rightarrow\\text{極}@", ['\\text{大}', '\\text{小}'], ['\\text{零}'],
       '$f\'\'<0$ 圖形凹口向下', "$f''(a)<0$ 極大、$f''(a)>0$ 極小")
   ]);
 
