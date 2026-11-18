@@ -12,7 +12,7 @@
   const D2R = Math.PI / 180;
   const pickBins = (cands, nb, n) => {
     const uniq = [...new Map(cands.map(c => [c[0], c])).values()];
-    for (let t = 0; t < 30; t++) { const s = sample(uniq, n || 6); if ([...Array(nb).keys()].every(b => s.some(c => c[1] === b))) return s; }
+    for (let t = 0; t < 30; t++) { const s = sample(uniq, n || 4); if ([...Array(nb).keys()].every(b => s.some(c => c[1] === b))) return s; }
     return fail();
   };
   const opts3 = (right, wrongs) => { const w = [...new Set(wrongs.map(String))].filter(x => x !== String(right)); if (w.length < 2) fail(); return [String(right), w[0], w[1]]; };
@@ -222,7 +222,7 @@
       for (let k = 0; k < 4; k++) { const a = ri(1, 3), b = nz(-3, 3), d = nz(-3, 3), e = nz(-3, 3); if (a * e !== b * d) c.push([`\\begin{cases}${lineTex(a, b, ri(-5, 5))}\\\\${lineTex(d, e, ri(-5, 5))}\\end{cases}`, 0]); }
       for (let k = 0; k < 3; k++) { const a = ri(1, 3), b = nz(-3, 3), m = pick([2, 3, -1]), c0 = ri(-4, 4); c.push([`\\begin{cases}${lineTex(a, b, c0)}\\\\${lineTex(a * m, b * m, c0 * m + nz(-3, 3))}\\end{cases}`, 1]); }
       for (let k = 0; k < 3; k++) { const a = ri(1, 3), b = nz(-3, 3), m = pick([2, 3, -1]), c0 = ri(-4, 4); c.push([`\\begin{cases}${lineTex(a, b, c0)}\\\\${lineTex(a * m, b * m, c0 * m)}\\end{cases}`, 2]); }
-      return B('這組聯立方程式的解是？', ['恰有一組解', '無解', '無限多組解'], pickBins(c, 3, 5), '$\\Delta\\ne0$：恰一解；兩式係數成比例：常數也成比例是無限多解，否則無解', '看係數是否成比例'); })
+      return B('這組聯立方程式的解是？', ['恰有一組解', '無解', '無限多組解'], pickBins(c, 3, 4), '$\\Delta\\ne0$：恰一解；兩式係數成比例：常數也成比例是無限多解，否則無解', '看係數是否成比例'); })
   ]);
   add(10, 'chain', [
     G(() => { const x0 = ri(-4, 4), y0 = ri(-4, 4), a = ri(1, 4), b = nz(-3, 3), c = nz(-3, 3), d = ri(1, 4), D = a * d - b * c;

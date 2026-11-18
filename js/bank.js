@@ -22,7 +22,6 @@
     point: { need: 1, label: '座標尋寶' },
     tiles: { need: 1, label: '公式拼圖' },
     // 第 2 批新玩法（2026-11）：from = 直接用其他玩法的題庫；distinctV = 一關裡的值不能重複
-    memory: { need: 4, label: '翻牌記憶', from: 'match', distinctV: true },
     mole: { need: 4, label: '打地鼠', from: 'match' },
     swipe: { need: 4, label: '快問快答', from: 'tf' },
     bingo: { need: 3, label: '數字賓果', from: 'match', distinctV: true },

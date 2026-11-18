@@ -125,7 +125,11 @@
   /* 分類收納：bins = 籃子名稱；items = [[TeX, 籃子編號], …] */
   K.B = (prompt, bins, items, hint, explain) => ({ prompt, bins, items: items.map(([tex, b]) => ({ tex, b })), hint, explain });
   /* 找錯偵探：steps = 解題步驟（可含中文，數學式用 $…$）；bad = 錯的那一步；fix = 正確的寫法 */
-  K.F = (prompt, steps, bad, fix, hint) => ({ prompt, steps, bad, fix, hint, explain: `第 ${bad + 1} 步錯了，應該是：${fix}` });
+  K.F = (prompt, steps, bad, fix, hint) => {
+    // 開頭的「原式」「原式：…」只是重抄題目，不當成選項（題目框已經寫出原式）
+    while (steps.length > 2 && /^原式/.test(steps[0]) && bad > 0) { steps = steps.slice(1); bad--; }
+    return { prompt, steps, bad, fix, hint, explain: `第 ${bad + 1} 步錯了，應該是：${fix}` };
+  };
   /* 把一串正確的步驟其中一步換成錯誤版本（wrongs[i] 為第 i 步的錯誤寫法，沒有就 null） */
   K.Fpick = (prompt, steps, wrongs, hint) => {
     const cand = wrongs.map((w, i) => (w ? i : -1)).filter(i => i >= 0);

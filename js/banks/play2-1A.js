@@ -13,7 +13,7 @@
   /* 分類：從候選中挑 n 張，每個籃子至少一張 */
   const pickBins = (cands, nb, n) => {
     const uniq = [...new Map(cands.map(c => [c[0], c])).values()];
-    for (let t = 0; t < 30; t++) { const s = sample(uniq, n || 6); if ([...Array(nb).keys()].every(b => s.some(c => c[1] === b))) return s; }
+    for (let t = 0; t < 30; t++) { const s = sample(uniq, n || 4); if ([...Array(nb).keys()].every(b => s.some(c => c[1] === b))) return s; }
     return fail();
   };
   /* 三選一的錯誤選項：去掉和正解相同的、重複的 */
@@ -153,7 +153,7 @@
   add(5, 'bins', [
     G(() => { const rs = sample([-3, -2, -1, 1, 2, 3, 4], 3), c = rs.reduce((p, r) => { const n = p.concat([0]); for (let i = n.length - 1; i > 0; i--) n[i] -= r * n[i - 1]; return n; }, [1]);
       const others = sample([-4, -3, -2, -1, 0, 1, 2, 3, 4, 5].filter(x => !rs.includes(x)), 3);
-      const items = rs.map(r => [fac(r), 0]).concat(others.map(r => [fac(r), 1]));
+      const items = rs.slice(0, 2).map(r => [fac(r), 0]).concat(others.slice(0, 2).map(r => [fac(r), 1]));
       return B(`$f(x)=${poly(c)}$。下列哪些是 $f(x)$ 的因式？`, ['是因式', '不是因式'], items, '因式定理：$x-a$ 是因式 $\\iff f(a)=0$', `$f(x)=${rs.map(r => fac(r)).join('')}$`);
     })
   ]);

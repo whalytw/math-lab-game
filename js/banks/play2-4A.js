@@ -11,7 +11,7 @@
   const $ = s => `$${s}$`;
   const pickBins = (cands, nb, n) => {
     const uniq = [...new Map(cands.map(c => [c[0], c])).values()];
-    for (let t = 0; t < 30; t++) { const s = sample(uniq, n || 6); if ([...Array(nb).keys()].every(b => s.some(c => c[1] === b))) return s; }
+    for (let t = 0; t < 30; t++) { const s = sample(uniq, n || 4); if ([...Array(nb).keys()].every(b => s.some(c => c[1] === b))) return s; }
     return fail();
   };
   const opts3 = (right, wrongs) => { const w = [...new Set(wrongs.map(String))].filter(x => x !== String(right)); if (w.length < 2) fail(); return [String(right), w[0], w[1]]; };
@@ -139,8 +139,8 @@
         "先求 $f'(x)=0$ 的兩根，再判斷每一段的正負", `$f'(x)=${k < 0 ? '-' : ''}3${fac(p)}${fac(q)}$`); })
   ]);
   add(6, 'bins', [
-    G(() => { const { k, p, q, c } = cubic(), xs = sample([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5].filter(x => x !== p && x !== q), 6);
-      return B(`$f(x)=${poly(c)}$。$f(x)$ 在下列各點附近是遞增還是遞減？`, ['遞增', '遞減'], xs.map(x => [`x=${x}`, 3 * k * (x - p) * (x - q) > 0 ? 0 : 1]), "看 $f'(x)$ 的正負", `$f'(x)=${k < 0 ? '-' : ''}3${fac(p)}${fac(q)}$`); })
+    G(() => { const { k, p, q, c } = cubic(), xs = [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5].filter(x => x !== p && x !== q);
+      return B(`$f(x)=${poly(c)}$。$f(x)$ 在下列各點附近是遞增還是遞減？`, ['遞增', '遞減'], pickBins(xs.map(x => [`x=${x}`, 3 * k * (x - p) * (x - q) > 0 ? 0 : 1]), 2), "看 $f'(x)$ 的正負", `$f'(x)=${k < 0 ? '-' : ''}3${fac(p)}${fac(q)}$`); })
   ]);
   add(6, 'gmatch', [
     G(() => { const all = [['y=x^{3}', x => x ** 3], ['y=-x^{3}', x => -(x ** 3)], ['y=x^{3}-3x', x => x ** 3 - 3 * x], ['y=-x^{3}+3x', x => -(x ** 3) + 3 * x], ['y=x^{3}+2', x => x ** 3 + 2], ['y=(x-1)^{3}', x => (x - 1) ** 3]];
@@ -178,7 +178,7 @@
   add(7, 'bins', [
     G(() => { const c = [];
       for (let k = 0; k < 10; k++) { const a = ri(-2, 1), b = a + ri(1, 3), co = [ri(-2, 2), ri(-3, 3), ri(-3, 3)], v = intVal(co, a, b); if (Math.abs(v) > 0.2) c.push([`\\int_{${a}}^{${b}}(${poly(co)})\\,dx`, v > 0 ? 0 : 1]); }
-      return B('這個定積分的值是正的還是負的？', ['大於 0', '小於 0'], pickBins(c, 2, 5), '算出 $F(b)-F(a)$；或想想圖形在 $x$ 軸上方、下方的面積', '依計算結果判斷'); })
+      return B('這個定積分的值是正的還是負的？', ['大於 0', '小於 0'], pickBins(c, 2, 4), '算出 $F(b)-F(a)$；或想想圖形在 $x$ 軸上方、下方的面積', '依計算結果判斷'); })
   ]);
 
   /* ================= 單元 8 積分的應用 ================= */
